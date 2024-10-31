@@ -120,13 +120,11 @@ function a11yProp(index) {
 
 export default function Home(){
 
-
-	
 	const router = useRouter();
 	const pathname = usePathname(); // Get the current pathname
 	const theme = useTheme();
 	const [value, setValue] = React.useState(0);
-	const [val, setVal] = React.useState(0);
+	const [val, setVal] = React.useState(1);
 	const [tabIndex, setTabIndex] = useState(0);
 	const [selected, setSelected] = useState('');
 
@@ -198,9 +196,6 @@ export default function Home(){
 	  const handleRemoveField = (id) => {
 		setFields(fields.filter((field) => field.id !== id));
 	  };
-
-	const today = new Date();
-    const twoDaysFromToday = new Date(today.setDate(today.getDate() + 1));
 	
 	const handleCodeSelect = (code) => {
 		// Handle the selected code
@@ -215,8 +210,9 @@ export default function Home(){
     mode: "onChange"});
 	
 	const { register: registerForm1, handleSubmit: handleSubmitForm1, formState: { errors: errorsForm1 }, setValue: setValueForm1, control: controlForm1 } = useForm();
-	const { register: registerForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2 } = useForm();
-	const { register: registerForm3, handleSubmit: handleSubmitForm3, formState: { errors: errorsForm3 }, setValue: setValueForm3, control: controlForm3 } = useForm();
+	const { register: registerForm2, watch: watchForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2 } = useForm();
+	const { register: registerForm3, handleSubmit: handleSubmitForm3, formState: { errors: errorsForm3 }, setValue: setValueForm3, control: controlForm3 } = useForm();	console.log(controlForm2);
+	
 
 	  // Single submit function
 	const onSubmit = (data, formName) => {
@@ -241,9 +237,17 @@ export default function Home(){
 		}
 	};
 	
-	console.log(val);
-	console.log(value);
-	
+	//console.log(val);
+	//console.log(value);
+	const departure_date = watchForm2("departure_date");
+
+	// Convert `departure_date` to a `Date` object if it is a string
+	const today = departure_date ? new Date(departure_date) : new Date();
+
+	// Create a new `Date` object instead of modifying `today` directly
+	const twoDaysFromToday = new Date(today);
+	twoDaysFromToday.setDate(today.getDate() + 1);
+
 	
    useEffect(() => {
     setValueForm1('adult', adults); // Update form value when state changes
@@ -398,7 +402,7 @@ export default function Home(){
 															<div className="col-lg-6 col-md-3">
 																<Form.Group>
 																  <InputGroup className="bg-white" style={{ border: 'none' }}>
-																	<InputGroup.Text style={{ borderRight: 'none', background: 'white' }}>
+																	<InputGroup.Text style={{  borderRight: 'none', background: 'white' }}>
 																	  <i className="bx bx-cabinet bx-sm"></i>
 																	</InputGroup.Text>
 																	<Form.Select name="cabin" className="" style={{ height: "45px", borderLeft: 'none' }} {...registerForm1("cabin", { required: "Select cabin"  })} aria-label="Default select example">

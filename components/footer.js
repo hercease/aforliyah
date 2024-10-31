@@ -28,7 +28,7 @@ return (
 										</a>
 										<div className="box-info-contact mt-0">
 										  <p className="text-md neutral-100">Your gateway to extraordinary experiences.</p>
-										  <p className="text-md neutral-100"><h6><b>CALL SUPPORT: +234 904 595 2027</b></h6></p>
+										  <p className="text-md neutral-100 h6"><b>CALL SUPPORT: +234 904 595 2027</b></p>
 										</div>
 									</div>
 								</div>

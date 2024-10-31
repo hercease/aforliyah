@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Booking Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #dddddd;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header img {
+            max-width: 150px;
+        }
+
+        .content {
+            font-size: 16px;
+            color: #333333;
+        }
+
+        .content h2 {
+            color: #007BFF;
+        }
+
+        .content p {
+            line-height: 1.5;
+        }
+
+        .booking-details, .payment-details, .important-info {
+            margin-top: 20px;
+        }
+
+        .booking-details table, .payment-details table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .booking-details table td, .payment-details table td {
+            padding: 10px;
+            border: 1px solid #dddddd;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #888888;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://afotravels.com/assets/imgs/logo.png" alt="Company Logo">
+        </div>
+        <div class="content">
+            <h2>Flight Booking Confirmation</h2>
+            <p>Hello <strong>[CustomerName]</strong>,</p>
+            <p>Thank you for choosing <strong>[Your Company Name]</strong>! We are excited to confirm your flight booking. Below are your booking details:</p>
+
+            <div class="booking-details">
+                <h3>Flight Booking Details</h3>
+                <table>
+                    <tr>
+                        <td><strong>PNR (Booking Reference)</strong></td>
+                        <td>[PNR]</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Passenger Name</strong></td>
+                        <td>[CustomerName]</td>
+                    </tr>
+					[FlightInfo]
+                </table>
+            </div>
+			[Payment Details]
+            
+
+            <div class="important-info">
+                <h3>Important Information</h3>
+                <p>1. For changes to your booking, please contact us at <a href="mailto:support@yourcompany.com">support@yourcompany.com</a> or call <strong>[Your Support Phone Number]</strong>.</p>
+                <p>2. For flight cancellations or rescheduling, check out our policies <a href="#">here</a>.</p>
+                <p>3. Check-in opens 48 hours before departure. Please bring a valid ID and your PNR code.</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>We look forward to providing you with a pleasant and comfortable journey. Thank you for flying with <strong>[Your Company Name]</strong>!</p>
+            <p>Safe Travels,</p>
+            <p><strong>[Your Company Name]</strong><br>
+                <a href="[Your Website URL]">[Your Website URL]</a><br>
+                Phone: tel:+234 805 943 2724 | Email: <a href="mailto:info@afotravels.com">info@afotravels.com</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

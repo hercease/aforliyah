@@ -301,8 +301,6 @@ const Flight = () => {
 	  setFields(fields.filter((field) => field.id !== id));
 	};
 
-	const today = new Date();
-    const twoDaysFromToday = new Date(today.setDate(today.getDate() + 1));
 	
 	/*const handleCodeSelect = (code) => {
 		// Handle the selected code
@@ -310,7 +308,7 @@ const Flight = () => {
 	};*/
   //console.log(fields);
 	const { register: registerForm1, handleSubmit: handleSubmitForm1, formState: { errors: errorsForm1 }, setValue: setValueForm1, control: controlForm1 } = useForm();
-	const { register: registerForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2 } = useForm();
+	const { register: registerForm2, watch: watchForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2 } = useForm();
 	const { register: registerForm3, handleSubmit: handleSubmitForm3, formState: { errors: errorsForm3 }, setValue: setValueForm3, control: controlForm3, unregister: unregisterForm3  } = useForm();
 
 	  // Single submit function
@@ -324,7 +322,7 @@ const Flight = () => {
 			router.push(`/flight_list?${query}`);
 		} else if (formName === 'form2') {
 		  // Handle Form 2 submission
-		  console.log('Form 2 data:', data);
+		  //console.log('Form 2 data:', data);
 		  setFiltershow(false);
 		  setSearchshow(false);
 		  const query = new URLSearchParams(data).toString();
@@ -332,7 +330,7 @@ const Flight = () => {
 		}
 		else if (formName === 'form3') {
 		  // Handle Form 2 submission
-		  console.log('Form 3 data:', data);
+		  //console.log('Form 3 data:', data);
 		  setFiltershow(false);
 		  setSearchshow(false);
 		  const query = new URLSearchParams(data).toString();
@@ -367,7 +365,7 @@ const Flight = () => {
 			setOnestop(response.data.onestop);
 			setTwostop(response.data.twostop);
 			setNonstop(response.data.nonstop);
-			console.log(response.data);
+			//console.log(response.data);
 			
 		  } catch (error) {
 			//console.error('Error sending request:', error);
@@ -413,14 +411,21 @@ const Flight = () => {
     }
 }, [params, arrivalCount, fields]);
 
+	const departure_date = watchForm2("departure_date");
 
+	// Convert `departure_date` to a `Date` object if it is a string
+	const today = departure_date ? new Date(departure_date) : new Date();
+
+	// Create a new `Date` object instead of modifying `today` directly
+	const twoDaysFromToday = new Date(today);
+	twoDaysFromToday.setDate(today.getDate() + 1);
 
  // Empty dependency array ensures it runs only once on page load
 	//console.log(payload);
 	
 	const handleClick = (id) => {
 	  //fetchFlightDetail(id); // Call the first function
-	  console.log(id);
+	  //console.log(id);
 	  //console.log(allflightresults[id]);
 	  const foundFlight = allflightresults.find(flight => flight.originalIndex === id);
 	  setFlightdetail(foundFlight);
@@ -596,7 +601,7 @@ const Flight = () => {
 	};
 	
 	//console.log(formType !=='multi-city' ? params.get('departure_date') || "" : params.get(`departure_date${formfield.id}`) || "");
-console.log(cheapestresults);
+//console.log(cheapestresults);
 	
 	useEffect(() => {
 		
@@ -1461,13 +1466,13 @@ console.log(cheapestresults);
 										if (index >= 7) {
 										return (
 												<li key={index}>
-												  <label className="cb-container">
-													<input type="checkbox" />
-													<span className="text-sm-medium">{item.name}</span>
-													<span className="checkmark"></span>
-												  </label>
-												  <span className="number-item">{item.count}</span>
-												</li>
+													<label className="cb-container">
+														<input checked={checkedItems.includes(item.name)} onChange={() => handleAirlineCheckboxChange(item.name)} type="checkbox" value={item.name} />
+														<span className="text-sm-medium">{item.name}</span>
+														<span className="checkmark"></span>
+													</label>
+												<span className="number-item">{item.count}</span>
+											</li>
 											  );
 										}
 										return null; // Return nothing if the item is not to be displayed
