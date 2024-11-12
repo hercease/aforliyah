@@ -6,6 +6,7 @@ import BackToTop from '../components/BackToTop.js'
 import DatePicker from "../components/Flatpickr.js"
 import createMetadata from "../components/CreateMetaData.js"
 import CustomTypeahead from '../components/CustomTypeHead';
+import HotelCustomTypeahead from '../components/HotelCustomTypehead';
 import Footer from '../components/footer';
 import Loader from "../components/loader.js"
 import styles from './page.module.css';
@@ -159,7 +160,9 @@ export default function Home(){
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
+  const [rooms, setRooms] = useState(1);
   const [inputValue, setInputValue] = useState(`${adults} Adult ${children} Child ${infants} Infant`);
+  const [hotelInputValue, setHotelInputValue] = useState(`${adults} Adult ${children} Child ${rooms} Room`);
 
   const handleSelect = (eventKey, event) => {
     event.stopPropagation();
@@ -169,14 +172,25 @@ export default function Home(){
     setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
   };
 
+  const updateHotelInputValue = () => {
+    setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
+  };
+
   const handleAdultsChange = (operation) => {
     setAdults(adults + operation > 0 ? adults + operation : 1);
 	setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
+	setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
+  };
+
+  const handleRoomsChange = (operation) => {
+    setRooms(rooms + operation > 0 ? rooms + operation : 1);
+	setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
   };
 
   const handleChildrenChange = (operation) => {
     setChildren(children + operation >= 0 ? children + operation : 0);
 	setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
+	setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
   };
 
   const handleInfantsChange = (operation) => {
@@ -211,7 +225,8 @@ export default function Home(){
 	
 	const { register: registerForm1, handleSubmit: handleSubmitForm1, formState: { errors: errorsForm1 }, setValue: setValueForm1, control: controlForm1 } = useForm();
 	const { register: registerForm2, watch: watchForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2 } = useForm();
-	const { register: registerForm3, handleSubmit: handleSubmitForm3, formState: { errors: errorsForm3 }, setValue: setValueForm3, control: controlForm3 } = useForm();	console.log(controlForm2);
+	const { register: registerForm3, handleSubmit: handleSubmitForm3, formState: { errors: errorsForm3 }, setValue: setValueForm3, control: controlForm3 } = useForm();
+	const { register: registerForm4, watch: watchForm4, handleSubmit: handleSubmitForm4, formState: { errors: errorsForm4 }, setValue: setValueForm4, control: controlForm4 } = useForm();
 	
 
 	  // Single submit function
@@ -235,20 +250,32 @@ export default function Home(){
 		  
 		  router.push(`/flight_list?${query}`);
 		}
+
+		else if (formName === 'form4') {
+			// Handle Form 2 submission
+			console.log('Form 3 data:', data);
+			const query = new URLSearchParams(data).toString();
+			
+			router.push(`/hotel_list?${query}`);
+		  }
 	};
 	
 	//console.log(val);
 	//console.log(value);
 	const departure_date = watchForm2("departure_date");
+	const checkin_date = watchForm4("checkin_date");
+	const checkout_date = watchForm4("checkout_date");
 
 	// Convert `departure_date` to a `Date` object if it is a string
 	const today = departure_date ? new Date(departure_date) : new Date();
+	const hoteltoday = checkin_date ? new Date(checkin_date) : new Date();
 
 	// Create a new `Date` object instead of modifying `today` directly
 	const twoDaysFromToday = new Date(today);
 	twoDaysFromToday.setDate(today.getDate() + 1);
 
-	
+	const hoteltwoDaysFromToday = new Date(hoteltoday);
+	hoteltwoDaysFromToday.setDate(hoteltoday.getDate() + 1);
    useEffect(() => {
     setValueForm1('adult', adults); // Update form value when state changes
     setValueForm1('children', children);
@@ -509,8 +536,8 @@ export default function Home(){
 																	initialQuery=""
 																  
 																	/> 
-																	)}
-																  />
+																)}
+															/>
 
 															</div>
 															
@@ -832,17 +859,149 @@ export default function Home(){
 												</CustomTabPanel>
 									</TabPanel>
 									<TabPanel value={value} index={1} dir={theme.direction}>
-										<div className="d-flex align-items-center justify-content-center vh-50">
-											<Image src="/assets/imgs/coming_soon.jpg"
-												width={200}           // Width of the image
-												height={200}          // Height of the image
-												layout="intrinsic"   // Maintains the image's aspect ratio
-												alt="Afotravels"    // Bootstrap class for right margin
-												quality={100}        // Image quality (0-100)
-												priority
-												className="text-center"
-											/>
-										</div>
+										<form onSubmit={handleSubmitForm4(data => onSubmit(data, 'form4'))} name="hotel_search" id="hotel_search">
+										<div className="row g-3">
+											<div className="col-lg-6 col-md-12">
+												<Controller
+													name="destination"
+													control={controlForm4}
+													rules={{ required: 'Enter your destination' }}
+													render={({ field }) => (
+													<HotelCustomTypeahead
+														id="hotel-destination"
+														placeholder="Destination"
+														name="destination"
+														icon="bx bxs-location-plus bx-sm"
+														fetchUrl="all_processes/"
+														onCodeSelect={(code) => field.onChange(code)}
+														error={errorsForm4.destination}
+														initialQuery=""
+														
+														
+														/>
+													)}
+												/>
+											</div>
+											<div className="col-lg-6 col-md-12">
+												<Controller
+													name='checkin_date'
+													control={controlForm4}
+													rules={{ required: 'Select CheckIn Date' }}
+													render={({ field }) => (
+													<DatePicker
+														placeholder="CheckIn date"
+														minDate={new Date()}
+														value={field.value}
+														onChange={field.onChange}
+													/>
+													)}
+												/>
+												{errorsForm4.checkin_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkin_date.message} </div>}
+											
+											</div>
+											<div className="col-lg-6 col-md-12">
+												<Controller
+													name='checkout_date'
+													control={controlForm4}
+													rules={{ required: 'Select CheckOut Date' }}
+													render={({ field }) => (
+													<DatePicker
+														placeholder="Checkout date"
+														minDate={checkin_date ? hoteltwoDaysFromToday : new Date()}
+														value={checkout_date <= hoteltwoDaysFromToday ? null :  field.value}
+														onChange={field.onChange}
+													/>
+													)}
+												/>
+												{errorsForm4.checkout_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkout_date.message} </div>}
+											</div>
+
+											<div className="col-lg-6 col-md-12">
+															
+												<Accordion>
+													<AccordionSummary
+														expandIcon={<ArrowDownwardIcon />}
+														aria-controls="panel1-content"
+														id="panel1-header"
+													>
+														<Typography>Lodgers ({`${adults} Adult${adults > 1 ? 's' : ''} ${children} Child${children > 1 ? 'ren' : ''} ${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
+													</AccordionSummary>
+													<AccordionDetails>
+														<div className="d-flex justify-content-between align-items-center">
+														<div>
+															<Typography>Adults</Typography>
+														</div>
+														<div className="hstack gap-1 align-items-center">
+														<Button disabled={adults <= 1} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(-1)}>
+															<i className="bi bi-dash-circle fs-5 fa-fw"></i>
+														</Button>
+														<Typography>{adults}</Typography>
+														<Button disabled={adults > 7} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(1)}>
+															<i className="bi bi-plus-circle fs-5 fa-fw"></i>
+														</Button>
+														</div>
+													</div>
+
+													<div className="d-flex justify-content-between align-items-center">
+														<div>
+														<Typography>Rooms</Typography>
+														</div>
+														<div className="hstack gap-1 align-items-center">
+														<Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
+															<i className="bi bi-dash-circle fs-5 fa-fw"></i>
+														</Button>
+														<Typography>{rooms}</Typography>
+														<Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
+															<i className="bi bi-plus-circle fs-5 fa-fw"></i>
+														</Button>
+														</div>
+													</div>
+													
+													<div className="d-flex justify-content-between align-items-center">
+														<div>
+														<Typography>Children</Typography>
+														</div>
+														<div className="hstack gap-1 align-items-center">
+														<Button variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(-1)}>
+															<i className="bi bi-dash-circle fs-5 fa-fw"></i>
+														</Button>
+														<Typography>{children}</Typography>
+														<Button disabled={children > 7} variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(1)}>
+															<i className="bi bi-plus-circle fs-5 fa-fw"></i>
+														</Button>
+														</div>
+													</div>
+
+													<div className="row">
+														{children <= 8 && [...Array(children)].map((_, ch) => (
+															<div className="col-lg-6 col-md-6" key={ch}>
+																<label>Child {ch + 1} Age</label>
+																<select name={`age${ch}`} className="form-select select-sm">
+																{[...Array(10)].map((_, age) => (
+																	<option key={age} value={age + 1}>{age + 1}</option>
+																))}
+																</select>
+															</div>
+														))}
+													</div>
+
+													
+													
+													</AccordionDetails>
+													</Accordion>
+											
+											</div>
+
+												<input id="adult4" type="hidden" {...registerForm4 ("adult")} value={adults} />
+												<input id="child4" type="hidden" {...registerForm4 ("child")} value={children} />
+												<input id="room" type="hidden" {...registerForm4 ("room")} value={rooms} />
+												<input type="hidden" {...registerForm4 ("request_type")} value="hotel_search" />
+
+												<div className="col-lg-12">
+													<Button type="submit" className="rounded-4" variant="contained" fullWidth size="small">Search Hotel</Button>
+												</div>
+											</div>
+										</form>
 									</TabPanel>
 									<TabPanel value={value} index={2} dir={theme.direction}>
 										<div className="d-flex align-items-center justify-content-center vh-50">

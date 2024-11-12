@@ -49,6 +49,201 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		$search_url = $website_url.'air/search?'.''. $build_query .'';
 		$resp = curlwithHeader($search_url,$api_key);
 
+		$search_url = $website_url.'air/search?'.''. $build_query .'';
+		$resp = curlwithHeader($search_url,$api_key);
+
+		if(!empty($resp) && is_array($resp)){
+
+			$totalmatrix = count($resp['Matrix']['DirectAirlines'] ?? []) + count($resp['Matrix']['TwoStopsAirlines'] ?? []) + count($resp['Matrix']['OneStopAirlines'] ?? []);
+			$mergematrix = array_merge($resp['Matrix']['DirectAirlines'] ?? [],$resp['Matrix']['TwoStopsAirlines'] ?? [],$resp['Matrix']['OneStopAirlines'] ?? []);
+			$allmatrix = [];
+			$nonstop = $resp['Matrix']['DirectAirlines'] ?? [];
+			$twostop = $resp['Matrix']['TwoStopsAirlines'] ?? [];
+			$onestop = $resp['Matrix']['OneStopAirlines'] ?? [];
+
+			foreach($mergematrix as $value){
+				$d = array("name" => $value['Airline'], "code" => $value['AirlineCode']);
+				if (!in_array($d, $allmatrix)){
+					$allmatrix[] = $d;
+				}
+			}
+			
+			$cheapest = $resp['PricedItineraries'][0]['AirItineraryPricingInfo']['TotalPrice'] ?? 0;
+
+			$fastestFlight = null;
+			$cheapestFlight = null;
+			$bestCombinationFlight = null;
+
+			$minDuration = PHP_INT_MAX;
+			$minPrice = PHP_INT_MAX;
+			$bestCombinationValue = PHP_INT_MAX;
+
+			foreach($resp['PricedItineraries'] ?? [] as $k => $a){
+
+				$a['originalIndex'] = $k;
+				$allArtinery[] = $a;
+				$completeArtinery[] = $a;
+				foreach($a['AirItinerary']['OriginDestinationOptions'] as $c){
+					foreach($c['FlightSegments'] as $key => $d){
+						$airlineName = $d['MarketingAirlineName'];
+						$airlineCode = $d['MarketingAirlineCode'];
+						
+						$price = $a['AirItineraryPricingInfo']['TotalPrice'];
+						$totalduration = $c['JourneyTotalDuration']; 
+
+						// Calculate the cheapest flight
+						if ($price < $minPrice) {
+							$minPrice = $price;
+							$cheapestFlight = $a;
+						}
+
+						// Calculate the fastest flight
+						if ($totalduration < $minDuration) {
+							$minDuration = $totalduration;
+							$fastestFlight = $a;
+						}
+
+						// Calculate the best combination of duration and price
+						$combinationValue = $totalduration + $price; // or use a weighted combination if needed
+
+						if ($combinationValue < $bestCombinationValue) {
+							$bestCombinationValue = $combinationValue;
+							$bestCombinationFlight = $a;
+						}
+						// Increment the total number of all market airlines
+						$totalMarketAirlines++;
+
+						// Initialize or increment the count for this airline
+						if (!isset($airlineCounts[$airlineName])) {
+							$airlineCounts[$airlineName] = 1; // Initialize count if not set
+						} else {
+							$airlineCounts[$airlineName]++; // Increment count if already set
+						}
+						
+						$marketAirlineKey = $airlineName . '-' . $airlineCode;
+						// Check if the airline is already in the uniqueStrings array
+						$exists = false;
+						foreach ($uniqueStrings as &$uniqueString) {
+							if ($uniqueString['key'] === $marketAirlineKey){
+								$uniqueString['count']++;
+								$exists = true;
+								break;
+							}
+						}
+
+						// If the airline is not in the uniqueStrings array, add it
+						if (!$exists) {
+							$uniqueStrings[] = [
+								"name" => $airlineName,
+								"code" => $airlineCode,
+								"count" => $airlineCounts[$airlineName], // Add the count to the array
+								"key" => $marketAirlineKey, // Include the unique key for comparison
+							];
+						}
+					}
+				}
+
+			}
+			
+			if(!empty($marketairline)){
+				//$airline = $count_airlines;
+				$allArtinery = array_filter($allArtinery, function($var) use ($marketairline) {  
+					$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]['FlightSegments'][0]['MarketingAirlineName'];
+					return in_array($evtime,$marketairline);  
+				});
+			}
+			
+			if(!empty($outbound_departure)){
+				$result = extractMinMaxDateTime($outbound_departure);
+				$startDate = $result['min'];
+				$endDate = $result['max'];
+				$allArtinery = array_filter($allArtinery, function($var) use ($startDate, $endDate){  
+				$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					//print_r($evtime);
+					return ($evtime >= $startDate  && $evtime <= $endDate); 
+				});
+			}
+			
+			if(!empty($outbound_arrival)){
+				$result = extractMinMaxDateTime($outbound_arrival);
+				$startDate = $result['min'];
+				$endDate = $result['max'];
+				$allArtinery = array_filter($allArtinery, function($var) use ($startDate, $endDate){  
+					$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					return $evtime <= $endDate && $evtime >= $startDate;  
+				});
+			}
+			
+			if(!empty($count_stops)){
+				$stops = end($count_stops);	
+				if($stops=='direct'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) == 1 ;
+						//return $count == 1; 
+					});
+				}
+				
+				if($stops=='onestop'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) == 2 ;
+						//return $count == 1; 
+					});
+				}
+				
+				if($stops=='twostop'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) >= 2;
+					});
+				}
+			}
+			
+			if($select_filter != ""){
+				
+				if($select_filter=='shortest first'){
+					array_multisort(array_map(static function($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["JourneyTotalDuration"];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='cheapest first'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItineraryPricingInfo']['TotalPrice'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='departure earliest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='departure latest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					},$allArtinery),SORT_DESC,$allArtinery);
+				}
+				if($select_filter=='arrival latest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					},$allArtinery),SORT_DESC,$allArtinery);
+				}
+				if($select_filter=='arrival earliest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				
+			}
+
+			$total_records = count($allArtinery);
+			$allArtinery = array_slice($allArtinery, $offset, $limit);
+			$total_pages   = ceil($total_records / $limit);
+			$response = ["status" => 0, 'cheapest' => $cheapest, 'nonstop' => $nonstop, 'twostop' => $twostop, 'onestop' => $onestop, 'all_matrix' => $allmatrix,  'allflights' => $completeArtinery, 'recommended' => $bestCombinationFlight, 'fastest_artinery' => $fastestFlight, 'cheapest_artinery' => $cheapestFlight, 'sessionId' => $resp['SessionId']?? [], 'outbound_departure' => $outbound_departure, 'page' => $page, 'airlines' => $uniqueStrings,  "total_pages" => $total_pages, "flights" => $allArtinery];
+			
+			
+		}else{
+			$response = ["status" => 1, 'page' => 0, 'airlines' => [], "total_pages" => 0, "flights" => []];
+		}
+		
+		echo json_encode($response);
+
 	}
 	
 	if(trim($request->request_type)== 'round-trip'){
@@ -66,6 +261,198 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		$build_query = "currencyCode=NGN&from1=$departure&to1=$arrival&from2=$arrival&to2=$departure&departureDate1=$departure_date&departureDate2=$arrival_date&adults=$adults&infants=$infant&children=$children&flightClass=$cabin&directFlightsOnly=$direct";
 		$search_url = $website_url.'air/search?'.''. $build_query .'';
 		$resp = curlwithHeader($search_url,$api_key);
+
+		if(!empty($resp) && is_array($resp)){
+
+			$totalmatrix = count($resp['Matrix']['DirectAirlines'] ?? []) + count($resp['Matrix']['TwoStopsAirlines'] ?? []) + count($resp['Matrix']['OneStopAirlines'] ?? []);
+			$mergematrix = array_merge($resp['Matrix']['DirectAirlines'] ?? [],$resp['Matrix']['TwoStopsAirlines'] ?? [],$resp['Matrix']['OneStopAirlines'] ?? []);
+			$allmatrix = [];
+			$nonstop = $resp['Matrix']['DirectAirlines'] ?? [];
+			$twostop = $resp['Matrix']['TwoStopsAirlines'] ?? [];
+			$onestop = $resp['Matrix']['OneStopAirlines'] ?? [];
+
+			foreach($mergematrix as $value){
+				$d = array("name" => $value['Airline'], "code" => $value['AirlineCode']);
+				if (!in_array($d, $allmatrix)){
+					$allmatrix[] = $d;
+				}
+			}
+			
+			$cheapest = $resp['PricedItineraries'][0]['AirItineraryPricingInfo']['TotalPrice'] ?? 0;
+
+			$fastestFlight = null;
+			$cheapestFlight = null;
+			$bestCombinationFlight = null;
+
+			$minDuration = PHP_INT_MAX;
+			$minPrice = PHP_INT_MAX;
+			$bestCombinationValue = PHP_INT_MAX;
+
+			foreach($resp['PricedItineraries'] ?? [] as $k => $a){
+
+				$a['originalIndex'] = $k;
+				$allArtinery[] = $a;
+				$completeArtinery[] = $a;
+				foreach($a['AirItinerary']['OriginDestinationOptions'] as $c){
+					foreach($c['FlightSegments'] as $key => $d){
+						$airlineName = $d['MarketingAirlineName'];
+						$airlineCode = $d['MarketingAirlineCode'];
+						
+						$price = $a['AirItineraryPricingInfo']['TotalPrice'];
+						$totalduration = $c['JourneyTotalDuration']; 
+
+						// Calculate the cheapest flight
+						if ($price < $minPrice) {
+							$minPrice = $price;
+							$cheapestFlight = $a;
+						}
+
+						// Calculate the fastest flight
+						if ($totalduration < $minDuration) {
+							$minDuration = $totalduration;
+							$fastestFlight = $a;
+						}
+
+						// Calculate the best combination of duration and price
+						$combinationValue = $totalduration + $price; // or use a weighted combination if needed
+
+						if ($combinationValue < $bestCombinationValue) {
+							$bestCombinationValue = $combinationValue;
+							$bestCombinationFlight = $a;
+						}
+						// Increment the total number of all market airlines
+						$totalMarketAirlines++;
+
+						// Initialize or increment the count for this airline
+						if (!isset($airlineCounts[$airlineName])) {
+							$airlineCounts[$airlineName] = 1; // Initialize count if not set
+						} else {
+							$airlineCounts[$airlineName]++; // Increment count if already set
+						}
+						
+						$marketAirlineKey = $airlineName . '-' . $airlineCode;
+						// Check if the airline is already in the uniqueStrings array
+						$exists = false;
+						foreach ($uniqueStrings as &$uniqueString) {
+							if ($uniqueString['key'] === $marketAirlineKey){
+								$uniqueString['count']++;
+								$exists = true;
+								break;
+							}
+						}
+
+						// If the airline is not in the uniqueStrings array, add it
+						if (!$exists) {
+							$uniqueStrings[] = [
+								"name" => $airlineName,
+								"code" => $airlineCode,
+								"count" => $airlineCounts[$airlineName], // Add the count to the array
+								"key" => $marketAirlineKey, // Include the unique key for comparison
+							];
+						}
+					}
+				}
+
+			}
+			
+			if(!empty($marketairline)){
+				//$airline = $count_airlines;
+				$allArtinery = array_filter($allArtinery, function($var) use ($marketairline) {  
+					$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]['FlightSegments'][0]['MarketingAirlineName'];
+					return in_array($evtime,$marketairline);  
+				});
+			}
+			
+			if(!empty($outbound_departure)){
+				$result = extractMinMaxDateTime($outbound_departure);
+				$startDate = $result['min'];
+				$endDate = $result['max'];
+				$allArtinery = array_filter($allArtinery, function($var) use ($startDate, $endDate){  
+				$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					//print_r($evtime);
+					return ($evtime >= $startDate  && $evtime <= $endDate); 
+				});
+			}
+			
+			if(!empty($outbound_arrival)){
+				$result = extractMinMaxDateTime($outbound_arrival);
+				$startDate = $result['min'];
+				$endDate = $result['max'];
+				$allArtinery = array_filter($allArtinery, function($var) use ($startDate, $endDate){  
+					$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					return $evtime <= $endDate && $evtime >= $startDate;  
+				});
+			}
+			
+			if(!empty($count_stops)){
+				$stops = end($count_stops);	
+				if($stops=='direct'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) == 1 ;
+						//return $count == 1; 
+					});
+				}
+				
+				if($stops=='onestop'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) == 2 ;
+						//return $count == 1; 
+					});
+				}
+				
+				if($stops=='twostop'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) >= 2;
+					});
+				}
+			}
+			
+			if($select_filter != ""){
+				
+				if($select_filter=='shortest first'){
+					array_multisort(array_map(static function($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["JourneyTotalDuration"];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='cheapest first'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItineraryPricingInfo']['TotalPrice'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='departure earliest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='departure latest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					},$allArtinery),SORT_DESC,$allArtinery);
+				}
+				if($select_filter=='arrival latest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					},$allArtinery),SORT_DESC,$allArtinery);
+				}
+				if($select_filter=='arrival earliest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				
+			}
+
+			$total_records = count($allArtinery);
+			$allArtinery = array_slice($allArtinery, $offset, $limit);
+			$total_pages   = ceil($total_records / $limit);
+			$response = ["status" => 0, 'cheapest' => $cheapest, 'nonstop' => $nonstop, 'twostop' => $twostop, 'onestop' => $onestop, 'all_matrix' => $allmatrix,  'allflights' => $completeArtinery, 'recommended' => $bestCombinationFlight, 'fastest_artinery' => $fastestFlight, 'cheapest_artinery' => $cheapestFlight, 'sessionId' => $resp['SessionId']?? [], 'outbound_departure' => $outbound_departure, 'page' => $page, 'airlines' => $uniqueStrings,  "total_pages" => $total_pages, "flights" => $allArtinery];
+			
+			
+		}else{
+			$response = ["status" => 1, 'page' => 0, 'airlines' => [], "total_pages" => 0, "flights" => []];
+		}
+		
+		echo json_encode($response);
 
 	}
 	
@@ -107,10 +494,6 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		}
 		
 		$build_query .= "adults=$adults&infants=$infant&children=$children&directFlightsOnly=$direct&flightClass=$cabin";
-		
-	}
-
-	if(trim($request->request_type)=='one-way' || trim($request->request_type)== 'round-trip' || trim($request->request_type)== "multi-city"){
 
 		$search_url = $website_url.'air/search?'.''. $build_query .'';
 		$resp = curlwithHeader($search_url,$api_key);
@@ -306,7 +689,206 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		}
 		
 		echo json_encode($response);
+		
 	}
+
+	/*if(trim($request->request_type)=='one-way' || trim($request->request_type)== 'round-trip' || trim($request->request_type)== "multi-city"){
+
+		$search_url = $website_url.'air/search?'.''. $build_query .'';
+		$resp = curlwithHeader($search_url,$api_key);
+
+		if(!empty($resp) && is_array($resp)){
+
+			$totalmatrix = count($resp['Matrix']['DirectAirlines'] ?? []) + count($resp['Matrix']['TwoStopsAirlines'] ?? []) + count($resp['Matrix']['OneStopAirlines'] ?? []);
+			$mergematrix = array_merge($resp['Matrix']['DirectAirlines'] ?? [],$resp['Matrix']['TwoStopsAirlines'] ?? [],$resp['Matrix']['OneStopAirlines'] ?? []);
+			$allmatrix = [];
+			$nonstop = $resp['Matrix']['DirectAirlines'] ?? [];
+			$twostop = $resp['Matrix']['TwoStopsAirlines'] ?? [];
+			$onestop = $resp['Matrix']['OneStopAirlines'] ?? [];
+
+			foreach($mergematrix as $value){
+				$d = array("name" => $value['Airline'], "code" => $value['AirlineCode']);
+				if (!in_array($d, $allmatrix)){
+					$allmatrix[] = $d;
+				}
+			}
+			
+			$cheapest = $resp['PricedItineraries'][0]['AirItineraryPricingInfo']['TotalPrice'] ?? 0;
+
+			$fastestFlight = null;
+			$cheapestFlight = null;
+			$bestCombinationFlight = null;
+
+			$minDuration = PHP_INT_MAX;
+			$minPrice = PHP_INT_MAX;
+			$bestCombinationValue = PHP_INT_MAX;
+
+			foreach($resp['PricedItineraries'] ?? [] as $k => $a){
+
+				$a['originalIndex'] = $k;
+				$allArtinery[] = $a;
+				$completeArtinery[] = $a;
+				foreach($a['AirItinerary']['OriginDestinationOptions'] as $c){
+					foreach($c['FlightSegments'] as $key => $d){
+						$airlineName = $d['MarketingAirlineName'];
+						$airlineCode = $d['MarketingAirlineCode'];
+						
+						$price = $a['AirItineraryPricingInfo']['TotalPrice'];
+						$totalduration = $c['JourneyTotalDuration']; 
+
+						// Calculate the cheapest flight
+						if ($price < $minPrice) {
+							$minPrice = $price;
+							$cheapestFlight = $a;
+						}
+
+						// Calculate the fastest flight
+						if ($totalduration < $minDuration) {
+							$minDuration = $totalduration;
+							$fastestFlight = $a;
+						}
+
+						// Calculate the best combination of duration and price
+						$combinationValue = $totalduration + $price; // or use a weighted combination if needed
+
+						if ($combinationValue < $bestCombinationValue) {
+							$bestCombinationValue = $combinationValue;
+							$bestCombinationFlight = $a;
+						}
+						// Increment the total number of all market airlines
+						$totalMarketAirlines++;
+
+						// Initialize or increment the count for this airline
+						if (!isset($airlineCounts[$airlineName])) {
+							$airlineCounts[$airlineName] = 1; // Initialize count if not set
+						} else {
+							$airlineCounts[$airlineName]++; // Increment count if already set
+						}
+						
+						$marketAirlineKey = $airlineName . '-' . $airlineCode;
+						// Check if the airline is already in the uniqueStrings array
+						$exists = false;
+						foreach ($uniqueStrings as &$uniqueString) {
+							if ($uniqueString['key'] === $marketAirlineKey){
+								$uniqueString['count']++;
+								$exists = true;
+								break;
+							}
+						}
+
+						// If the airline is not in the uniqueStrings array, add it
+						if (!$exists) {
+							$uniqueStrings[] = [
+								"name" => $airlineName,
+								"code" => $airlineCode,
+								"count" => $airlineCounts[$airlineName], // Add the count to the array
+								"key" => $marketAirlineKey, // Include the unique key for comparison
+							];
+						}
+					}
+				}
+
+			}
+			
+			if(!empty($marketairline)){
+				//$airline = $count_airlines;
+				$allArtinery = array_filter($allArtinery, function($var) use ($marketairline) {  
+					$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]['FlightSegments'][0]['MarketingAirlineName'];
+					return in_array($evtime,$marketairline);  
+				});
+			}
+			
+			if(!empty($outbound_departure)){
+				$result = extractMinMaxDateTime($outbound_departure);
+				$startDate = $result['min'];
+				$endDate = $result['max'];
+				$allArtinery = array_filter($allArtinery, function($var) use ($startDate, $endDate){  
+				$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					//print_r($evtime);
+					return ($evtime >= $startDate  && $evtime <= $endDate); 
+				});
+			}
+			
+			if(!empty($outbound_arrival)){
+				$result = extractMinMaxDateTime($outbound_arrival);
+				$startDate = $result['min'];
+				$endDate = $result['max'];
+				$allArtinery = array_filter($allArtinery, function($var) use ($startDate, $endDate){  
+					$evtime = $var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					return $evtime <= $endDate && $evtime >= $startDate;  
+				});
+			}
+			
+			if(!empty($count_stops)){
+				$stops = end($count_stops);	
+				if($stops=='direct'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) == 1 ;
+						//return $count == 1; 
+					});
+				}
+				
+				if($stops=='onestop'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) == 2 ;
+						//return $count == 1; 
+					});
+				}
+				
+				if($stops=='twostop'){
+					$allArtinery = array_filter($allArtinery, function($var) use ($stops){
+						return count($var['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"]) >= 2;
+					});
+				}
+			}
+			
+			if($select_filter != ""){
+				
+				if($select_filter=='shortest first'){
+					array_multisort(array_map(static function($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["JourneyTotalDuration"];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='cheapest first'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItineraryPricingInfo']['TotalPrice'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='departure earliest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				if($select_filter=='departure latest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['DepartureDate'];
+					},$allArtinery),SORT_DESC,$allArtinery);
+				}
+				if($select_filter=='arrival latest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					},$allArtinery),SORT_DESC,$allArtinery);
+				}
+				if($select_filter=='arrival earliest'){
+					array_multisort(array_map(static function ($element){
+						return $element['AirItinerary']['OriginDestinationOptions'][0]["FlightSegments"][0]['ArrivalDate'];
+					},$allArtinery),SORT_ASC,$allArtinery);
+				}
+				
+			}
+
+			$total_records = count($allArtinery);
+			$allArtinery = array_slice($allArtinery, $offset, $limit);
+			$total_pages   = ceil($total_records / $limit);
+			$response = ["status" => 0, 'cheapest' => $cheapest, 'nonstop' => $nonstop, 'twostop' => $twostop, 'onestop' => $onestop, 'all_matrix' => $allmatrix,  'allflights' => $completeArtinery, 'recommended' => $bestCombinationFlight, 'fastest_artinery' => $fastestFlight, 'cheapest_artinery' => $cheapestFlight, 'sessionId' => $resp['SessionId']?? [], 'outbound_departure' => $outbound_departure, 'page' => $page, 'airlines' => $uniqueStrings,  "total_pages" => $total_pages, "flights" => $allArtinery];
+			
+			
+		}else{
+			$response = ["status" => 1, 'page' => 0, 'airlines' => [], "total_pages" => 0, "flights" => []];
+		}
+		
+		echo json_encode($response);
+	}*/
 
 	
 
@@ -348,6 +930,22 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		
 		echo json_encode($response);
 	}
+
+	if(trim($request->request_type) == 'search_hotel') {
+		
+		$search = sanitizeInput($request->term);
+		$search_url = $website_url.'/hotel/references/destination/'.$search;
+		
+		$resp = curlwithHeader($search_url, $api_key);
+		
+		// Check if response is empty and return an empty JSON object if so
+		if (empty($resp)) {
+			echo json_encode([]);
+		} else {
+			echo json_encode($resp);
+		}
+	}
+	
 	
 	if(trim($request->request_type)=='check_payment'){
 	
@@ -579,7 +1177,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 			//print_r($resp['BookingDetails']['Flights'][0]['AirItineraryPricingInfo']);
 			//print_r($resp['BookingDetails']['Travellers'][0]['SelectedPrepaidBaggage']);
 
-			$html = "<table style='width:100%;margin:0 auto;display:block'>
+			/*$html = "<table style='width:100%;margin:0 auto;display:block'>
 				<table style='max-width:1000px;display: table; border-collapse: separate; box-sizing: border-box; text-indent: initial; border-spacing: 2px; border-color: gray;' border='0' align='center' cellpadding='0' cellspacing='0'>
 					<tbody style='border-collapse: separate; text-indent: initial; border-spacing: 2px;'>
 						<tr>
@@ -991,10 +1589,10 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 				</tr>
 				</tbody>
 				</table>
-				</table>";
+				</table>";*/
 
 
-		/*	$email_template = file_get_contents('../email_template.html');
+			$email_template = file_get_contents('../email_template.html');
 
 			foreach ($flights as $data) {
 				// Accessing 'FlightSegments' as an object
@@ -1046,10 +1644,10 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 				$email_template = str_replace('[Payment Details]', $paymentdetails, $email_template);
 			}
 			
-			//$email_template = str_replace('[Your Website URL]', 'https://afotravels.com', $email_template);
-			//$email_template = str_replace('[Your Company Name]', 'Aforliyah Travels Limited', $email_template);
-			*/
-			$result = sendmail($email,$FirstName.''.$LastName,$html,'Flight Booking Confirmation - PNR:'.$resp['ReferenceNumber']);
+			$email_template = str_replace('[Your Website URL]', 'https://afotravels.com', $email_template);
+			$email_template = str_replace('[Your Company Name]', 'Aforliyah Travels Limited', $email_template);
+			
+			$result = sendmail($email,$FirstName.''.$LastName,$email_template,'Flight Booking Confirmation - PNR:'.$resp['ReferenceNumber']);
 			//Insert Adult Information
 			if(isset($request->{'adult_title_0'})){
 				for ($i=0; $i < $adult_count; $i++){

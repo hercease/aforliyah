@@ -300,7 +300,6 @@ const Flight = () => {
 	  // Remove the field from the state
 	  setFields(fields.filter((field) => field.id !== id));
 	};
-
 	
 	/*const handleCodeSelect = (code) => {
 		// Handle the selected code
@@ -351,7 +350,7 @@ const Flight = () => {
 		 setIsLoading(true);
 		const fetchData = async () => {
 		  try {
-			const response  = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
+			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
 			setFlightresults(response.data.flights);
 			setAllflightresults(response.data.allflights);
 			setFlightmatrix(response.data.all_matrix);
@@ -601,7 +600,7 @@ const Flight = () => {
 	};
 	
 	//console.log(formType !=='multi-city' ? params.get('departure_date') || "" : params.get(`departure_date${formfield.id}`) || "");
-//console.log(cheapestresults);
+	//console.log(cheapestresults);
 	
 	useEffect(() => {
 		
@@ -652,6 +651,7 @@ const Flight = () => {
 	
 	
     `}</style>
+	
 	<AnimatePresence mode="wait">
 		<Layout key={pathname}>
 			<main className="main">

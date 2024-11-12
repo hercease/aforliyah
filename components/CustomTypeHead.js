@@ -131,7 +131,7 @@ const CustomTypeahead = ({
                 onCodeSelect(code);
               }
             }
-			}
+			  }
 			}
           selected={selected}
           placeholder={placeholder}
