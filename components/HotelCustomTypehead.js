@@ -30,7 +30,7 @@ const HotelCustomeTypeAhead = ({
         },
         body: JSON.stringify({
           term : query,
-          request_type: 'search_hotel' // Add request_type here
+          request_type: 'search_destination' // Add request_type here
         }),
       })
         .then((response) => response.json())

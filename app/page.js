@@ -163,29 +163,34 @@ export default function Home(){
   const [rooms, setRooms] = useState(1);
   const [inputValue, setInputValue] = useState(`${adults} Adult ${children} Child ${infants} Infant`);
   const [hotelInputValue, setHotelInputValue] = useState(`${adults} Adult ${children} Child ${rooms} Room`);
+  const [roomsState, setRoomsState] = useState(
+	Array(rooms).fill({ adults: 1, children: 0 })
+  );
+  
+//console.log(roomsState);
 
-  const handleSelect = (eventKey, event) => {
-    event.stopPropagation();
-  };
+	const handleSelect = (eventKey, event) => {
+		event.stopPropagation();
+	};
 
-  const updateInputValue = () => {
-    setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
-  };
+	const updateInputValue = () => {
+		setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
+	};
 
-  const updateHotelInputValue = () => {
-    setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
-  };
+	const updateHotelInputValue = () => {
+		setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
+	};
 
-  const handleAdultsChange = (operation) => {
-    setAdults(adults + operation > 0 ? adults + operation : 1);
-	setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
-	setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
-  };
+	const handleAdultsChange = (operation) => {
+		setAdults(adults + operation > 0 ? adults + operation : 1);
+		setInputValue(`${adults} Adult ${children} Child ${infants} Infant`);
+		setHotelInputValue(`${rooms} Room`);
+	};
 
-  const handleRoomsChange = (operation) => {
+  /*const handleRoomsChange = (operation) => {
     setRooms(rooms + operation > 0 ? rooms + operation : 1);
 	setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
-  };
+  };*/
 
   const handleChildrenChange = (operation) => {
     setChildren(children + operation >= 0 ? children + operation : 0);
@@ -226,8 +231,45 @@ export default function Home(){
 	const { register: registerForm1, handleSubmit: handleSubmitForm1, formState: { errors: errorsForm1 }, setValue: setValueForm1, control: controlForm1 } = useForm();
 	const { register: registerForm2, watch: watchForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2 } = useForm();
 	const { register: registerForm3, handleSubmit: handleSubmitForm3, formState: { errors: errorsForm3 }, setValue: setValueForm3, control: controlForm3 } = useForm();
-	const { register: registerForm4, watch: watchForm4, handleSubmit: handleSubmitForm4, formState: { errors: errorsForm4 }, setValue: setValueForm4, control: controlForm4 } = useForm();
+	const { register: registerForm4, watch: watchForm4, handleSubmit: handleSubmitForm4, formState: { errors: errorsForm4 }, setValue: setValueForm4, control: controlForm4, unregister: unregisterForm4 } = useForm();
 	
+	
+	const handleRoomChange = (roomIndex, type, delta) => {
+		setRoomsState((prev) =>
+		  prev.map((room, index) =>
+			index === roomIndex
+			  ? { ...room, [type]: Math.max(0, room[type] + delta) }
+			  : room
+		  )
+		);
+	  
+		// Update form values
+		setValueForm4(`room${roomIndex}_${type}`, Math.max(0, roomsState[roomIndex][type] + delta));
+	};
+
+	const handleRoomsChange = (delta) => {
+		const newRooms = Math.max(1, rooms + delta);
+		 // Clear form data for removed rooms
+		 if (newRooms < rooms) {
+			for (let i = newRooms; i < rooms; i++) {
+				unregisterForm4(`room${i}_adults`);
+				unregisterForm4(`room${i}_children`);
+				unregisterForm4(`room${i}_child${i}_age`);
+			}
+		  }
+		setRooms(newRooms);
+	  //console.log(newRooms);
+		// Adjust roomsState array
+		setRoomsState((prev) =>
+		  newRooms > prev.length
+			? [...prev, { adults: 1, children: 0 }]
+				: prev.slice(0, newRooms)
+			);
+		
+			setValueForm4('room', newRooms);
+		
+		};
+	  
 
 	  // Single submit function
 	const onSubmit = (data, formName) => {
@@ -259,6 +301,7 @@ export default function Home(){
 			router.push(`/hotel_list?${query}`);
 		  }
 	};
+
 	
 	//console.log(val);
 	//console.log(value);
@@ -691,24 +734,24 @@ export default function Home(){
 																	<div className="card-header mb-2 flight-label d-flex">{`Flight ${formfield.id}`} {formfield.id > 1 && <span onClick={() => handleRemoveField(formfield.id)} className="ms-auto"><i className="bx bxs-trash text-danger delete-button"></i></span>}</div>
 																		<div className="row">
 																			<div className="col-lg-6 col-md-3 mb-2">
-																	<Controller
-																		name={`departure${formfield.id}`}
-																		control={controlForm3}
-																		rules={{ required: 'Please select a departure location.' }}
-																		render={({ field }) => (
-																		<CustomTypeahead
-																			id="multi-flight-from"
-																			placeholder="Flying from"
-																			name={`departure${formfield.id}`}
-																			icon="bx bxs-plane-take-off bx-sm"
-																			fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
-																			onCodeSelect={(code) => field.onChange(code)}
-																			error={errorsForm3[`departure${formfield.id}`]}
-																			initialQuery=""
-																			
-																		/> 
-																		)}
-																	/>
+																			<Controller
+																				name={`departure${formfield.id}`}
+																				control={controlForm3}
+																				rules={{ required: 'Please select a departure location.' }}
+																				render={({ field }) => (
+																				<CustomTypeahead
+																					id="multi-flight-from"
+																					placeholder="Flying from"
+																					name={`departure${formfield.id}`}
+																					icon="bx bxs-plane-take-off bx-sm"
+																					fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																					onCodeSelect={(code) => field.onChange(code)}
+																					error={errorsForm3[`departure${formfield.id}`]}
+																					initialQuery=""
+																					
+																				/> 
+																				)}
+																			/>
 
 																</div>
 																		
@@ -911,7 +954,7 @@ export default function Home(){
 														value={checkout_date <= hoteltwoDaysFromToday ? null :  field.value}
 														onChange={field.onChange}
 													/>
-													)}
+													)} 
 												/>
 												{errorsForm4.checkout_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkout_date.message} </div>}
 											</div>
@@ -924,77 +967,114 @@ export default function Home(){
 														aria-controls="panel1-content"
 														id="panel1-header"
 													>
-														<Typography>Lodgers ({`${adults} Adult${adults > 1 ? 's' : ''} ${children} Child${children > 1 ? 'ren' : ''} ${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
+														<Typography>Lodgers ({`${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
 													</AccordionSummary>
 													<AccordionDetails>
-														<div className="d-flex justify-content-between align-items-center">
+
+													<div className="d-flex justify-content-between align-items-center">
 														<div>
+															<Typography>Rooms</Typography>
+														</div>
+														<div className="hstack gap-1 align-items-center">
+															<Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
+																<i className="bi bi-dash-circle fs-5 fa-fw"></i>
+															</Button>
+															<Typography>{rooms}</Typography>
+															<Button disabled={rooms > 3} variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
+																<i className="bi bi-plus-circle fs-5 fa-fw"></i>
+															</Button>
+														</div>
+													</div>
+												
+													{[...Array(rooms)].map((_, roomIndex) => (
+														<div key={roomIndex} className="card p-2 mb-2">
+															<div className="card-header">{`Room ${roomIndex + 1}`}</div>
+
+															{/* Adults */}
+															<div className="d-flex justify-content-between align-items-center">
 															<Typography>Adults</Typography>
-														</div>
-														<div className="hstack gap-1 align-items-center">
-														<Button disabled={adults <= 1} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(-1)}>
-															<i className="bi bi-dash-circle fs-5 fa-fw"></i>
-														</Button>
-														<Typography>{adults}</Typography>
-														<Button disabled={adults > 7} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(1)}>
-															<i className="bi bi-plus-circle fs-5 fa-fw"></i>
-														</Button>
-														</div>
-													</div>
-
-													<div className="d-flex justify-content-between align-items-center">
-														<div>
-														<Typography>Rooms</Typography>
-														</div>
-														<div className="hstack gap-1 align-items-center">
-														<Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
-															<i className="bi bi-dash-circle fs-5 fa-fw"></i>
-														</Button>
-														<Typography>{rooms}</Typography>
-														<Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
-															<i className="bi bi-plus-circle fs-5 fa-fw"></i>
-														</Button>
-														</div>
-													</div>
-													
-													<div className="d-flex justify-content-between align-items-center">
-														<div>
-														<Typography>Children</Typography>
-														</div>
-														<div className="hstack gap-1 align-items-center">
-														<Button variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(-1)}>
-															<i className="bi bi-dash-circle fs-5 fa-fw"></i>
-														</Button>
-														<Typography>{children}</Typography>
-														<Button disabled={children > 7} variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(1)}>
-															<i className="bi bi-plus-circle fs-5 fa-fw"></i>
-														</Button>
-														</div>
-													</div>
-
-													<div className="row">
-														{children <= 8 && [...Array(children)].map((_, ch) => (
-															<div className="col-lg-6 col-md-6" key={ch}>
-																<label>Child {ch + 1} Age</label>
-																<select name={`age${ch}`} className="form-select select-sm">
-																{[...Array(10)].map((_, age) => (
-																	<option key={age} value={age + 1}>{age + 1}</option>
-																))}
-																</select>
+															<div className="hstack gap-1 align-items-center">
+																<Button
+																disabled={roomsState[roomIndex].adults <= 1}
+																variant="link"
+																className="p-0 mb-0"
+																onClick={() => handleRoomChange(roomIndex, "adults", -1)}
+																>
+																<i className="bi bi-dash-circle fs-5 fa-fw"></i>
+																</Button>
+																<Typography>{roomsState[roomIndex].adults}</Typography>
+																<Button
+																disabled={roomsState[roomIndex].adults >= 8}
+																variant="link"
+																className="p-0 mb-0"
+																onClick={() => handleRoomChange(roomIndex, "adults", 1)}
+																>
+																<i className="bi bi-plus-circle fs-5 fa-fw"></i>
+																</Button>
 															</div>
-														))}
-													</div>
+															</div>
 
-													
-													
+															{/* Children */}
+															<div className="d-flex justify-content-between align-items-center">
+															<Typography>Children</Typography>
+															<div className="hstack gap-1 align-items-center">
+																<Button
+																disabled={roomsState[roomIndex].children <= 0}
+																variant="link"
+																className="p-0 mb-0"
+																onClick={() => handleRoomChange(roomIndex, "children", -1)}
+																>
+																<i className="bi bi-dash-circle fs-5 fa-fw"></i>
+																</Button>
+																<Typography>{roomsState[roomIndex].children}</Typography>
+																<Button
+																disabled={roomsState[roomIndex].children >= 8}
+																variant="link"
+																className="p-0 mb-0"
+																onClick={() => handleRoomChange(roomIndex, "children", 1)}
+																>
+																<i className="bi bi-plus-circle fs-5 fa-fw"></i>
+																</Button>
+															</div>
+															</div>
+
+															{/* Child Ages */}
+															<div className="row">
+															{[...Array(roomsState[roomIndex].children)].map((_, childIndex) => (
+																<div key={childIndex} className="col-lg-6 col-md-6">
+																<label>{`Child ${childIndex + 1} Age`}</label>
+																<select name={`room${roomIndex}_child${childIndex}_age`} {...registerForm4(`room${roomIndex}_child${childIndex}_age`)}  className="form-select select-sm">
+																	{[...Array(10)].map((_, age) => (
+																	<option key={age} value={age + 1}>
+																		{age + 1}
+																	</option>
+																	))}
+																</select>
+																</div>
+															))}
+															</div>
+
+															{/* Hidden Inputs */}
+															<input
+															type="hidden"
+															{...registerForm4(`room${roomIndex}_adults` )}
+															value={roomsState[roomIndex].adults}
+															/>
+															<input
+															type="hidden"
+															{...registerForm4(`room${roomIndex}_children`)}
+															value={roomsState[roomIndex].children}
+															/>
+														</div>
+														))}
+
+
 													</AccordionDetails>
-													</Accordion>
+												</Accordion>
 											
 											</div>
 
-												<input id="adult4" type="hidden" {...registerForm4 ("adult")} value={adults} />
-												<input id="child4" type="hidden" {...registerForm4 ("child")} value={children} />
-												<input id="room" type="hidden" {...registerForm4 ("room")} value={rooms} />
+												<input id="room" type="hidden" {...registerForm4("room")} value={rooms} />
 												<input type="hidden" {...registerForm4 ("request_type")} value="hotel_search" />
 
 												<div className="col-lg-12">

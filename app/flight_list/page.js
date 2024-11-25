@@ -243,7 +243,7 @@ const Flight = () => {
 		setValue(index);
 	};
 	
-	const handlepageChange = (event, value) => {
+	const  handlepageChange = (event, value) => {
 		setPage(value);
 		//console.log(value);
 		//console.log(payload);
@@ -285,10 +285,6 @@ const Flight = () => {
 		  setFields([...fields, { id: fields.length + 1 }]);
 		}
 	},[fields]);
-
-	/*const handleRemoveField = (id) => {
-	  setFields((prevFields) => prevFields.filter((field) => field.id !== id));
-	};*/
 	
 	const handleRemoveField = (id) => {
 	  // Unregister the fields for the specific id being removed
@@ -299,6 +295,7 @@ const Flight = () => {
 	  
 	  // Remove the field from the state
 	  setFields(fields.filter((field) => field.id !== id));
+
 	};
 	
 	/*const handleCodeSelect = (code) => {

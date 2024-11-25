@@ -19,44 +19,178 @@ import Nouislider from 'nouislider-react';
 import axios from 'axios';
 import { Card, Form, Table, ButtonGroup, InputGroup,ListGroup, Input, Dropdown, Row, Col, Tab as BootstrapTab, Tabs as BootstrapTabs, FloatingLabel, Button as BootstrapButton, Collapse, OverlayTrigger, Tooltip  } from 'react-bootstrap';
 import { AppBar,Accordion,AccordionSummary,AccordionDetails, Tabs, Tab, Tab as MaterialTab, Tabs as MaterialTabs } from '@mui/material';
+import Pagination from '@mui/material/Pagination';
+import FormatNumberWithComma from '../../components/formatNumberWithComma';
+import { ConstructionOutlined } from '@mui/icons-material';
+import StarIcon from "@mui/icons-material/Star";
+import Modal from "../../components/Modal";
+import Link from 'next/link';
 
 
 const HotelList = () => {
 
     const pathname = usePathname(); // Get the current pathname
+    const searchParams = useSearchParams();
     const [collapseshow, setCollapseshow] = useState(false);
     const router = useRouter();
     const params = useSearchParams();
     const [searchshow, setSearchshow] = useState(false);
     const [detailshow, setDetailshow] = useState(false);
     const [filtershow, setFiltershow] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [Hotels, setHotels] = useState();
+    const [minimumprice, setMinimumPrice] = useState(0);
+    const [maximumprice, setMaximumPrice] = useState(0);
+    const [sessionid, setSessionId] = useState();
+    const [pagination, setPagination] = useState();
 
-    const [adults, setAdults] = useState(parseInt(params.get('adult') || 1));
-	  const [children, setChildren] = useState(parseInt(params.get('children') || 0));
+	  const [page, setPage] = React.useState(1);
+
 	  const [rooms, setRooms] = useState(parseInt(params.get('room') || 1));
+    const [roomsState, setRoomsState] = useState([]);
 
-    const [hotelInputValue, setHotelInputValue] = useState(`${adults} Adult ${children} Child ${rooms} Room`);
+    const [formData, setFormData] = useState({});
 
-    const updateHotelInputValue = () => {
-        setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
-      };
-    
-      const handleAdultsChange = (operation) => {
-        setAdults(adults + operation > 0 ? adults + operation : 1);
-        setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
-      };
-    
-      const handleRoomsChange = (operation) => {
-        setRooms(rooms + operation > 0 ? rooms + operation : 1);
-        setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
-      };
-    
-      const handleChildrenChange = (operation) => {
-        setChildren(children + operation >= 0 ? children + operation : 0);
-        setHotelInputValue(`${adults} Adult ${children} Child ${rooms} Room`);
+    useEffect(() => {
+
+      const newRoomsState = Array.from({ length: rooms }).map((_, roomIndex) => ({
+        adults: parseInt(params.get(`room${roomIndex}_adults`) || "1", 10),
+        children: parseInt(params.get(`room${roomIndex}_children`) || "0", 10),
+        childrenAges: Array.from({ length: parseInt(params.get(`room${roomIndex}_children`) || "0", 10) }).map(
+          (_, childIndex) => parseInt(params.get(`room${roomIndex}_child${childIndex}_age`) || "1", 10)
+        ),
+      }));
+
+      setRoomsState(newRoomsState);
+
+    }, [params, rooms]);
+
+    const reloadPage = () => {
+      router.refresh(); // Reloads the page without a full browser reload
+    };
+
+     // Memoize formValues
+    const formValues = useMemo(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      const values = {};
+      for (const [key, value] of params.entries()) {
+        values[key] = value;
+      }
+      return values;
+    }, [searchParams]);
+
+    useEffect(() => {
+      setIsLoading(true);
+
+      const fetchData = async () => {
+        try {
+          const response = await axios.post(
+            `${process.env.NEXT_PUBLIC_HOST}/all_processes/`,
+            formValues
+          );
+          console.log(response.data);
+          setHotels(response.data.Hotels);
+          setSessionId(response.data.SessionId);
+        } catch (error) {
+          console.error("Error fetching data", error);
+        } finally {
+          setIsLoading(false);
+        }
       };
 
-      const { register: registerForm4, watch: watchForm4, handleSubmit: handleSubmitForm4, formState: { errors: errorsForm4 }, setValue: setValueForm4, control: controlForm4 } = useForm();
+      fetchData();
+    }, [formValues]); // Use memoized values as dependency
+
+    const fetchHoteldetails = (hotelid) => {
+      try {
+        const response = axios.post(
+          `${process.env.NEXT_PUBLIC_HOST}/all_processes/`, { hotelid: hotelid, sessionid: sessionid, request_type: "hotel_details" }
+        );
+      } catch (error) {
+        
+      }
+    }
+
+    //console.log(Hotels);
+
+  
+    //const [hotelInputValue, setHotelInputValue] = useState(`${adults} Adult ${children} Child ${rooms} Room`);
+
+    /*const payload = useMemo(() => {
+      const request_type = params.get('request_type');
+      const select_filter = params.get('select_filter');
+      const newPayload = {};
+     
+      newPayload.code = params.get('destination');
+      newPayload.checkin = params.get('checkin_date');
+      newPayload.checkout = params.get('checkout_date');
+      newPayload.adult =  params.get('adult');
+      newPayload.child =  params.get('child');
+      newPayload.room =  params.get('room');
+    
+        return newPayload;
+    }, [
+      params, page
+    ]);*/
+
+      const { register: registerForm4, watch: watchForm4, handleSubmit: handleSubmitForm4, formState: { errors: errorsForm4 }, setValue: setValueForm4, control: controlForm4, unregister: unregisterForm4 } = useForm();
+
+      const handleRoomChange = (roomIndex, field, delta) => {
+        const updatedValue = Math.max(0, roomsState[roomIndex][field] + delta);
+      
+        setRoomsState((prev) =>
+          prev.map((room, idx) =>
+            idx === roomIndex
+              ? {
+                  ...room,
+                  [field]: updatedValue,
+                  ...(field === "children" && { childrenAges: room.childrenAges.slice(0, updatedValue) }),
+                }
+              : room
+          )
+        );
+      
+        // Update form values
+        setValueForm4(`room${roomIndex}_${field}`, updatedValue);
+      };
+      
+    
+      const handleRoomsChange = (delta) => {
+
+        const newRooms = Math.max(1, rooms + delta);
+         // Clear form data for removed rooms
+         if (newRooms < rooms) {
+          for (let i = newRooms; i < rooms; i++) {
+            unregisterForm4(`room${i}_adults`);
+            unregisterForm4(`room${i}_children`);
+            unregisterForm4(`room${i}_child${i}_age`);
+          }
+          }
+          setRooms(newRooms);
+          //console.log(newRooms);
+          // Adjust roomsState array
+          setRoomsState((prev) =>
+            newRooms > prev.length
+            ? [...prev, { adults: 1, children: 0 }]
+              : prev.slice(0, newRooms)
+            );
+        
+          setValueForm4('room', newRooms);
+        
+        };
+
+          // Single submit function
+        const onSubmit = (data, formName) => {
+          if (formName === 'form4') {
+            // Handle Form 2 submission
+            console.log('Form 3 data:', data);
+            const query = new URLSearchParams(data).toString();
+            
+            router.push(`/hotel_list?${query}`);
+            handleClose();
+            }
+        };
+	
 
       const handleClose = () => setSearchshow(false);
       const handleShow = () => setSearchshow(true);
@@ -75,349 +209,557 @@ const HotelList = () => {
       const hoteltwoDaysFromToday = new Date(hoteltoday);
       hoteltwoDaysFromToday.setDate(hoteltoday.getDate() + 1);
 
+      const handlepageChange = (event, value) => {
+        setPage(value);
+      };
+
+      const HotelAwards = ({ awards }) => {
+        const localStarRating = awards.find(
+          (award) => award.Provider === "Local Star Rating"
+        );
+      
+        return (
+          <div>
+            {localStarRating ? (
+              [...Array(parseInt(localStarRating.Rating) || 0)].map((_, index) => (
+                <StarIcon key={index} style={{ color: "gold" }} />
+              ))
+            ) : (
+              <p>No star rating</p>
+            )}
+          </div>
+        );
+      };
+      
+      
+
       return (
         <>
           	<AnimatePresence mode="wait">
               <Layout key={pathname}>
                 <main className="main">
-                  <div className="container-fluid">
+
+                    <div className="container-fluid">
+
                       <div className="container">
-                      
                         <div className="d-flex justify-content-between gap-2 py-4">
+                    
+                          <BootstrapButton style={{fontSize : 15}} onClick={handleShow} variant="secondary" size="sm" className="d-xl-none mb-0 rounded-4">
+                            Modify search
+                          </BootstrapButton>
+                          
                         
-                            <BootstrapButton style={{fontSize : 15}} onClick={handleShow} variant="secondary" size="sm" className="d-xl-none mb-0 rounded-4">
-                              Modify search
-                            </BootstrapButton>
-                            
-                          
-                            <BootstrapButton style={{fontSize : 15}} onClick={handleFilterShow} variant="secondary" size="sm" className="d-xl-none mb-0 rounded-4">
-                              Show filters
-                            </BootstrapButton>
-                          
+                          <BootstrapButton style={{fontSize : 15}} onClick={handleFilterShow} variant="secondary" size="sm" className="d-xl-none mb-0 rounded-4">
+                            Show filters
+                          </BootstrapButton>
+                      
                         </div>
+                      </div>
 
-                        <div className="row d-none d-lg-block">
-                        <div className="col-12 col-lg-12 col-xl-12 py-2 mb-3">
-                        <div className="card">
-                        <form onSubmit={handleSubmitForm4(data => onSubmit(data, 'form4'))} name="hotel_search" id="hotel_search">
-                          <div className="row g-3">
-                            <div className="col-lg-6 col-md-12">
-                              <Controller
-                                name="destination"
-                                control={controlForm4}
-                                rules={{ required: 'Enter your destination' }}
-                                render={({ field }) => (
-                                <HotelCustomTypeahead
-                                  id="hotel-destination"
-                                  placeholder="Destination"
-                                  name="destination"
-                                  icon="bx bxs-location-plus bx-sm"
-                                  fetchUrl="all_processes/"
-                                  onCodeSelect={(code) => field.onChange(code)}
-                                  error={errorsForm4.destination}
-                                  initialQuery={params.get('destination') || ""}
+                    </div>
+
+                <section className="box-section block-content-tourlist background-body">
+                    <div className="container">
+
+                    <div className="row d-none d-lg-block">
+                          <div className="col-12 col-lg-12 col-xl-12 py-2 mb-3">
+                            <div className="card">
+                              <div className="card-body">
+
+                              <form onSubmit={handleSubmitForm4(data => onSubmit(data, 'form4'))} name="hotel_search" id="hotel_search">
+                                <div className="row g-3">
+                                  <div className="col-lg-6 col-md-12">
+                                    <Controller
+                                      name="destination"
+                                      control={controlForm4}
+                                      rules={{ required: 'Enter your destination' }}
+                                      render={({ field }) => (
+                                      <HotelCustomTypeahead
+                                        id="hotel-destination"
+                                        placeholder="Destination"
+                                        name="destination"
+                                        icon="bx bxs-location-plus bx-sm"
+                                        fetchUrl="all_processes/"
+                                        onCodeSelect={(code) => field.onChange(code)}
+                                        error={errorsForm4.destination}
+                                        initialQuery={params.get('destination') || ""}
+                                        
+                                        
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="col-lg-6 col-md-12">
+                                    <Controller
+                                      name='checkin_date'
+                                      control={controlForm4}
+                                      rules={{ required: 'Select CheckIn Date' }}
+                                      render={({ field }) => (
+                                      <DatePicker
+                                        placeholder="CheckIn date"
+                                        minDate={new Date()}
+                                        value={field.value || params.get('checkin_date')}
+                                        onChange={field.onChange}
+                                        default_date={params.get('checkin_date') || ""}
+                                      />
+                                      )}
+                                    />
+                                    {errorsForm4.checkin_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkin_date.message} </div>}
                                   
-                                  />
-                                )}
-                              />
-                            </div>
-                            <div className="col-lg-6 col-md-12">
-                              <Controller
-                                name='checkin_date'
-                                control={controlForm4}
-                                rules={{ required: 'Select CheckIn Date' }}
-                                render={({ field }) => (
-                                <DatePicker
-                                  placeholder="CheckIn date"
-                                  minDate={new Date()}
-                                  value={field.value}
-                                  onChange={field.onChange}
-                                />
-                                )}
-                              />
-                              {errorsForm4.checkin_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkin_date.message} </div>}
-                            
-                            </div>
-                            <div className="col-lg-6 col-md-12">
-                              <Controller
-                                name='checkout_date'
-                                control={controlForm4}
-                                rules={{ required: 'Select CheckOut Date' }}
-                                render={({ field }) => (
-                                <DatePicker
-                                  placeholder="Checkout date"
-                                  minDate={checkin_date ? hoteltwoDaysFromToday : new Date()}
-                                  value={checkout_date <= hoteltwoDaysFromToday ? null :  field.value}
-                                  onChange={field.onChange}
-                                />
-                                )}
-                              />
-                              {errorsForm4.checkout_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkout_date.message} </div>}
-                            </div>
+                                  </div>
+                                  <div className="col-lg-6 col-md-12">
+                                    <Controller
+                                      name='checkout_date'
+                                      control={controlForm4}
+                                      rules={{ required: 'Select CheckOut Date' }}
+                                      render={({ field }) => (
+                                      <DatePicker
+                                        placeholder="Checkout date"
+                                        minDate={checkin_date ? hoteltwoDaysFromToday : new Date()}
+                                        value={checkout_date <= hoteltwoDaysFromToday ? null :  field.value || params.get('checkout_date')}
+                                        onChange={field.onChange}
+                                        default_date={params.get('checkout_date') || ""}
+                                      />
+                                      )} 
+                                    />
+                                    {errorsForm4.checkout_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkout_date.message} </div>}
+                                  </div>
 
-                            <div className="col-lg-6 col-md-12">
-                                    
-                              <Accordion>
-                                <AccordionSummary
-                                  expandIcon={<ArrowDownwardIcon />}
-                                  aria-controls="panel1-content"
-                                  id="panel1-header"
-                                >
-                                  <Typography>Lodgers ({`${adults} Adult${adults > 1 ? 's' : ''} ${children} Child${children > 1 ? 'ren' : ''} ${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                  <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                    <Typography>Adults</Typography>
-                                  </div>
-                                  <div className="hstack gap-1 align-items-center">
-                                  <Button disabled={adults <= 1} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(-1)}>
-                                    <i className="bi bi-dash-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  <Typography>{adults}</Typography>
-                                  <Button disabled={adults > 7} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(1)}>
-                                    <i className="bi bi-plus-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  </div>
-                                </div>
+                                  <div className="col-lg-6 col-md-12">
+                                          
+                                    <Accordion>
+                                      <AccordionSummary
+                                        expandIcon={<ArrowDownwardIcon />}
+                                        aria-controls="panel1-content"
+                                        id="panel1-header"
+                                      >
+                                        <Typography>Lodgers ({`${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
+                                      </AccordionSummary>
+                                      <AccordionDetails>
 
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                  <Typography>Rooms</Typography>
-                                  </div>
-                                  <div className="hstack gap-1 align-items-center">
-                                  <Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
-                                    <i className="bi bi-dash-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  <Typography>{rooms}</Typography>
-                                  <Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
-                                    <i className="bi bi-plus-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  </div>
-                                </div>
+                                      <div className="d-flex justify-content-between align-items-center">
+                                        <div>
+                                          <Typography>Rooms</Typography>
+                                        </div>
+                                        <div className="hstack gap-1 align-items-center">
+                                          <Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
+                                            <i className="bi bi-dash-circle fs-5 fa-fw"></i>
+                                          </Button>
+                                          <Typography>{rooms}</Typography>
+                                          <Button disabled={rooms > 3} variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
+                                            <i className="bi bi-plus-circle fs-5 fa-fw"></i>
+                                          </Button>
+                                        </div>
+                                      </div>
                                 
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                  <Typography>Children</Typography>
-                                  </div>
-                                  <div className="hstack gap-1 align-items-center">
-                                  <Button variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(-1)}>
-                                    <i className="bi bi-dash-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  <Typography>{children}</Typography>
-                                  <Button disabled={children > 7} variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(1)}>
-                                    <i className="bi bi-plus-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  </div>
-                                </div>
+                                        {roomsState.map((room, roomIndex) => (
+                                                <div key={roomIndex} className="card p-2 mb-2">
+                                                  <div className="card-header">{`Room ${roomIndex + 1}`}</div>
 
-                                <div className="row">
-                                  {children <= 8 && [...Array(children)].map((_, ch) => (
-                                    <div className="col-lg-6 col-md-6" key={ch}>
-                                      <label>Child {ch + 1} Age</label>
-                                      <select name={`age${ch}`} className="form-select select-sm">
-                                      {[...Array(10)].map((_, age) => (
-                                        <option key={age} value={age + 1}>{age + 1}</option>
-                                      ))}
-                                      </select>
+                                                  {/* Adults */}
+                                                  <div className="d-flex justify-content-between align-items-center">
+                                                    <Typography>Adults</Typography>
+                                                    <div className="hstack gap-1 align-items-center">
+                                                      <Button
+                                                        disabled={room.adults <= 1}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "adults", -1)}
+                                                      >
+                                                        <i className="bi bi-dash-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                      <Typography>{room.adults}</Typography>
+                                                      <Button
+                                                        disabled={room.adults >= 8}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "adults", 1)}
+                                                      >
+                                                        <i className="bi bi-plus-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Children */}
+                                                  <div className="d-flex justify-content-between align-items-center">
+                                                    <Typography>Children</Typography>
+                                                    <div className="hstack gap-1 align-items-center">
+                                                      <Button
+                                                        disabled={room.children <= 0}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "children", -1)}
+                                                      >
+                                                        <i className="bi bi-dash-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                      <Typography>{room.children}</Typography>
+                                                      <Button
+                                                        disabled={room.children >= 8}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "children", 1)}
+                                                      >
+                                                        <i className="bi bi-plus-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Child Ages */}
+                                                  <div className="row">
+                                                    {room.childrenAges.map((age, childIndex) => (
+                                                      <div key={childIndex} className="col-lg-6 col-md-6">
+                                                        <label>{`Child ${childIndex + 1} Age`}</label>
+                                                        <select
+                                                          name={`room${roomIndex}_child${childIndex}_age`}
+                                                          {...registerForm4(`room${roomIndex}_child${childIndex}_age`)}
+                                                          value={age}
+                                                          onChange={(e) =>
+                                                            setRoomsState((prev) =>
+                                                              prev.map((r, idx) =>
+                                                                idx === roomIndex
+                                                                  ? {
+                                                                      ...r,
+                                                                      childrenAges: r.childrenAges.map((a, ci) =>
+                                                                        ci === childIndex ? parseInt(e.target.value, 10) : a
+                                                                      ),
+                                                                    }
+                                                                  : r
+                                                              )
+                                                            )
+                                                          }
+                                                          className="form-select select-sm"
+                                                        >
+                                                          {[...Array(10)].map((_, i) => (
+                                                            <option key={i} value={i + 1}>
+                                                              {i + 1}
+                                                            </option>
+                                                          ))}
+                                                        </select>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+
+                                                    {/* Hidden Inputs */}
+                                                    <input
+                                                    type="hidden"
+                                                    {...registerForm4(`room${roomIndex}_adults` )}
+                                                    value={roomsState[roomIndex].adults}
+                                                    />
+                                                    <input
+                                                    type="hidden"
+                                                    {...registerForm4(`room${roomIndex}_children`)}
+                                                    value={roomsState[roomIndex].children}
+                                                    />
+
+                                                </div>
+                                              ))}
+
+                                      </AccordionDetails>
+                                    </Accordion>
+                                  
+                                  </div>
+
+                                    <input id="room" type="hidden" {...registerForm4("room")} value={rooms} />
+                                    <input type="hidden" {...registerForm4 ("request_type")} value="hotel_search" />
+
+                                    <div className="col-lg-12">
+                                      <Button type="submit" className="rounded-4" variant="contained" fullWidth size="small">Search Hotel</Button>
                                     </div>
-                                  ))}
-                                </div>
-
-                                
-                                
-                                </AccordionDetails>
-                                </Accordion>
-                            
+                                  </div>
+                                </form>
                             </div>
-
-                              <input id="adult4" type="hidden" {...registerForm4 ("adult")} value={adults} />
-                              <input id="child4" type="hidden" {...registerForm4 ("child")} value={children} />
-                              <input id="room" type="hidden" {...registerForm4 ("room")} value={rooms} />
-                              <input type="hidden" {...registerForm4 ("request_type")} value="hotel_search" />
-
-                              <div className="col-lg-12">
-                                <Button type="submit" className="rounded-4" variant="contained" fullWidth size="small">Search Hotel</Button>
-                              </div>
-                            </div>
-                          </form>
                           </div>
                         </div>
+                      </div>
+
+                      {isLoading ? (
+							  
+                        <div className="d-flex justify-content-center align-items-center" style={{  height: "50vh" }}>
+                          <Image alt="Aforliyah preloader" width={100} height={100} src="/assets/imgs/aforliyah_preloader.gif" />
+                        </div>
+                        
+                      ) : (
+
+                      <div className="box-content-main">
+                        <div className="content-right">
+                          <div className="box-grid-tours">
+                            <div className="row">
+                            {Hotels && Hotels.map((d, k) => { 
+                              return (
+
+                                <div key={k} className="col-xl-4 col-lg-6 col-md-6">
+                                <div className="card-journey-small background-card"> 
+                                  <div className="card-image"> <a className="label" href="#"><HotelAwards awards={d.HotelAwards} /></a>
+                                    <a href="hotel-detail.html">
+                                      <Image 
+                                        layout="intrinsic" 
+                                        alt="Hotel Image" 
+                                        width={200} 
+                                        height={200} 
+                                        quality={100} 
+                                        priority
+                                        src={d.HotelMainImage || "/assets/imgs/hotelimage.gif"}
+                                      />
+                                      </a>
+                                  </div>
+                                  <div className="card-info"> 
+                                    <div className="card-rating"> 
+                                      <div className="card-left"> </div>
+                                      <div className="card-right"> <span className=""></span></div>
+                                    </div>
+                                    <div className="card-title"><Link href={`/hotel_detail?id=${d.Id}&session=${sessionid}`} className="heading-6 neutral-1000">{d.HotelName}</Link></div>
+                                    <div className="card-program"> 
+                                      <div className="card-location"> 
+                                        <p className="text-location text-sm-medium neutral-500">{d.HotelAddress.StreetAddress}, {d.HotelAddress.CityName}, {d.HotelAddress.RegionName}, {d.HotelAddress.ZIP}, {d.HotelAddress.CountryCode}</p>
+                                      </div>
+                                      <div className="endtime"> 
+                                        <div className="card-price"> 
+                                          <h6 className="text-md-medium fw-bold neutral-1000">{d.CurrencyCode}{FormatNumberWithComma(d.DailyRatePerRoom)}</h6>
+                                          <p className="text-sm-medium neutral-500">/ night</p>
+                                        </div>
+                                        <div className="card-button"> <Link className="btn btn-gray btn-sm" href={`/hotel_detail?id=${d.Id}&session=${sessionid}`}>View Details</Link></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                            )})}
+
+                              {Hotels && <div className="mx-auto">
+                                <Pagination
+                                      count={pagination?.TotalPages}
+                                      page={page} 
+                                      onChange={handlepageChange}
+                                      variant="outlined"
+                                      color="primary"
+                                      shape="rounded"
+                                  />
+                             </div>}
+
+                             <div className=""></div>  
+                              
+
+                            </div>
+                          </div>
+                        </div>
+                        <div className="content-left order-lg-first">
+                         
                         </div>
 
+                      </div>
 
-                          <Offcanvas show={detailshow} onHide={handleDetailClose}>
-                            <Offcanvas.Header closeButton>
-                              <Offcanvas.Title><i className='bx bxs-plane-alt'></i> Flight Detail</Offcanvas.Title>
-                            </Offcanvas.Header>
-                            <Offcanvas.Body className="">
-                            
-                              {/* Add your offcanvas content here */}
-                            </Offcanvas.Body>
-                          </Offcanvas>
-			
-                        <Offcanvas show={filtershow} onHide={handleFilterClose}>
-                          <Offcanvas.Header closeButton>
-                            <Offcanvas.Title><i className="bx bx-edit"></i> Filters</Offcanvas.Title>
-                          </Offcanvas.Header>
-                          <Offcanvas.Body className="bg-light">
-                            {/* Add your offcanvas content here */}
-                           
-                          </Offcanvas.Body>
-                        </Offcanvas>
-			
-                        <Offcanvas show={searchshow} onHide={handleClose}>
+                      
+                      
+                     )}
+                    </div>
+                  </section>
+
+                  <Modal id="exampleModal" title="My Modal">
+                    <p>This is the content of the modal.</p>
+                  </Modal>
+
+                      <Offcanvas show={searchshow} onHide={handleClose}>
                           <Offcanvas.Header closeButton>
                             <Offcanvas.Title><i className="bx bx-edit"></i> Modify Search</Offcanvas.Title>
                           </Offcanvas.Header>
                           <Offcanvas.Body className="bg-light">
-                            {/* Add your offcanvas content here */}
-                            <form onSubmit={handleSubmitForm4(data => onSubmit(data, 'form4'))} name="hotel_search" id="hotel_search">
-                          <div className="row g-3">
-                            <div className="col-lg-6 col-md-12">
-                              <Controller
-                                name="destination"
-                                control={controlForm4}
-                                rules={{ required: 'Enter your destination' }}
-                                render={({ field }) => (
-                                <HotelCustomTypeahead
-                                  id="hotel-destination"
-                                  placeholder="Destination"
-                                  name="destination"
-                                  icon="bx bxs-location-plus bx-sm"
-                                  fetchUrl='process.env.NEXT_PUBLIC_HOST}/all_processes/'
-                                  onCodeSelect={(code) => field.onChange(code)}
-                                  error={errorsForm4.destination}
-                                  initialQuery=""
+                              <form onSubmit={handleSubmitForm4(data => onSubmit(data, 'form4'))} name="hotel_search" id="hotel_search">
+                                <div className="row g-3">
+                                  <div className="col-lg-6 col-md-12">
+                                    <Controller
+                                      name="destination"
+                                      control={controlForm4}
+                                      rules={{ required: 'Enter your destination' }}
+                                      render={({ field }) => (
+                                      <HotelCustomTypeahead
+                                        id="hotel-destination"
+                                        placeholder="Destination"
+                                        name="destination"
+                                        icon="bx bxs-location-plus bx-sm"
+                                        fetchUrl="all_processes/"
+                                        onCodeSelect={(code) => field.onChange(code)}
+                                        error={errorsForm4.destination}
+                                        initialQuery={params.get('destination') || ""}
+                                        
+                                        
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                  <div className="col-lg-6 col-md-12">
+                                    <Controller
+                                      name='checkin_date'
+                                      control={controlForm4}
+                                      rules={{ required: 'Select CheckIn Date' }}
+                                      render={({ field }) => (
+                                      <DatePicker
+                                        placeholder="CheckIn date"
+                                        minDate={new Date()}
+                                        value={field.value || params.get('checkin_date')}
+                                        onChange={field.onChange}
+                                        default_date={params.get('checkin_date') || ""}
+                                      />
+                                      )}
+                                    />
+                                    {errorsForm4.checkin_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkin_date.message} </div>}
                                   
-                                  />
-                                )}
-                              />
-                            </div>
-                            <div className="col-lg-6 col-md-12">
-                              <Controller
-                                name='checkin_date'
-                                control={controlForm4}
-                                rules={{ required: 'Select CheckIn Date' }}
-                                render={({ field }) => (
-                                <DatePicker
-                                  placeholder="CheckIn date"
-                                  minDate={new Date()}
-                                  value={field.value}
-                                  onChange={field.onChange}
-                                />
-                                )}
-                              />
-                              {errorsForm4.checkin_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkin_date.message} </div>}
-                            
-                            </div>
-                            <div className="col-lg-6 col-md-12">
-                              <Controller
-                                name='checkout_date'
-                                control={controlForm4}
-                                rules={{ required: 'Select CheckOut Date' }}
-                                render={({ field }) => (
-                                <DatePicker
-                                  placeholder="Checkout date"
-                                  minDate={checkin_date ? hoteltwoDaysFromToday : new Date()}
-                                  value={checkout_date <= hoteltwoDaysFromToday ? null :  field.value}
-                                  onChange={field.onChange}
-                                />
-                                )}
-                              />
-                              {errorsForm4.checkout_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkout_date.message} </div>}
-                            </div>
+                                  </div>
+                                  <div className="col-lg-6 col-md-12">
+                                    <Controller
+                                      name='checkout_date'
+                                      control={controlForm4}
+                                      rules={{ required: 'Select CheckOut Date' }}
+                                      render={({ field }) => (
+                                      <DatePicker
+                                        placeholder="Checkout date"
+                                        minDate={checkin_date ? hoteltwoDaysFromToday : new Date()}
+                                        value={checkout_date <= hoteltwoDaysFromToday ? null :  field.value || params.get('checkout_date')}
+                                        onChange={field.onChange}
+                                        default_date={params.get('checkout_date') || ""}
+                                      />
+                                      )} 
+                                    />
+                                    {errorsForm4.checkout_date  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon fontSize="small" /> {errorsForm4.checkout_date.message} </div>}
+                                  </div>
 
-                            <div className="col-lg-6 col-md-12">
-                                    
-                              <Accordion>
-                                <AccordionSummary
-                                  expandIcon={<ArrowDownwardIcon />}
-                                  aria-controls="panel1-content"
-                                  id="panel1-header"
-                                >
-                                  <Typography>Lodgers ({`${adults} Adult${adults > 1 ? 's' : ''} ${children} Child${children > 1 ? 'ren' : ''} ${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                  <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                    <Typography>Adults</Typography>
-                                  </div>
-                                  <div className="hstack gap-1 align-items-center">
-                                  <Button disabled={adults <= 1} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(-1)}>
-                                    <i className="bi bi-dash-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  <Typography>{adults}</Typography>
-                                  <Button disabled={adults > 7} variant="link" className="p-0 mb-0" onClick={() => handleAdultsChange(1)}>
-                                    <i className="bi bi-plus-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  </div>
-                                </div>
+                                  <div className="col-lg-6 col-md-12">
+                                          
+                                    <Accordion>
+                                      <AccordionSummary
+                                        expandIcon={<ArrowDownwardIcon />}
+                                        aria-controls="panel1-content"
+                                        id="panel1-header"
+                                      >
+                                        <Typography>Lodgers ({`${rooms} Room${rooms > 1 ? 's' : ''}`})</Typography>
+                                      </AccordionSummary>
+                                      <AccordionDetails>
 
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                  <Typography>Rooms</Typography>
-                                  </div>
-                                  <div className="hstack gap-1 align-items-center">
-                                  <Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
-                                    <i className="bi bi-dash-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  <Typography>{rooms}</Typography>
-                                  <Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
-                                    <i className="bi bi-plus-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  </div>
-                                </div>
+                                      <div className="d-flex justify-content-between align-items-center">
+                                        <div>
+                                          <Typography>Rooms</Typography>
+                                        </div>
+                                        <div className="hstack gap-1 align-items-center">
+                                          <Button variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(-1)}>
+                                            <i className="bi bi-dash-circle fs-5 fa-fw"></i>
+                                          </Button>
+                                          <Typography>{rooms}</Typography>
+                                          <Button disabled={rooms > 3} variant="link" className="p-0 mb-0" onClick={() => handleRoomsChange(1)}>
+                                            <i className="bi bi-plus-circle fs-5 fa-fw"></i>
+                                          </Button>
+                                        </div>
+                                      </div>
                                 
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                  <Typography>Children</Typography>
-                                  </div>
-                                  <div className="hstack gap-1 align-items-center">
-                                  <Button variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(-1)}>
-                                    <i className="bi bi-dash-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  <Typography>{children}</Typography>
-                                  <Button disabled={children > 7} variant="link" className="p-0 mb-0" onClick={() => handleChildrenChange(1)}>
-                                    <i className="bi bi-plus-circle fs-5 fa-fw"></i>
-                                  </Button>
-                                  </div>
-                                </div>
+                                        {roomsState.map((room, roomIndex) => (
+                                                <div key={roomIndex} className="card p-2 mb-2">
+                                                  <div className="card-header">{`Room ${roomIndex + 1}`}</div>
 
-                                <div className="row">
-                                  {children <= 8 && [...Array(children)].map((_, ch) => (
-                                    <div className="col-lg-6 col-md-6" key={ch}>
-                                      <label>Child {ch + 1} Age</label>
-                                      <select name={`age${ch}`} className="form-select select-sm">
-                                      {[...Array(10)].map((_, age) => (
-                                        <option key={age} value={age + 1}>{age + 1}</option>
-                                      ))}
-                                      </select>
+                                                  {/* Adults */}
+                                                  <div className="d-flex justify-content-between align-items-center">
+                                                    <Typography>Adults</Typography>
+                                                    <div className="hstack gap-1 align-items-center">
+                                                      <Button
+                                                        disabled={room.adults <= 1}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "adults", -1)}
+                                                      >
+                                                        <i className="bi bi-dash-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                      <Typography>{room.adults}</Typography>
+                                                      <Button
+                                                        disabled={room.adults >= 8}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "adults", 1)}
+                                                      >
+                                                        <i className="bi bi-plus-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Children */}
+                                                  <div className="d-flex justify-content-between align-items-center">
+                                                    <Typography>Children</Typography>
+                                                    <div className="hstack gap-1 align-items-center">
+                                                      <Button
+                                                        disabled={room.children <= 0}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "children", -1)}
+                                                      >
+                                                        <i className="bi bi-dash-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                      <Typography>{room.children}</Typography>
+                                                      <Button
+                                                        disabled={room.children >= 8}
+                                                        variant="link"
+                                                        onClick={() => handleRoomChange(roomIndex, "children", 1)}
+                                                      >
+                                                        <i className="bi bi-plus-circle fs-5 fa-fw"></i>
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Child Ages */}
+                                                  <div className="row">
+                                                    {room.childrenAges.map((age, childIndex) => (
+                                                      <div key={childIndex} className="col-lg-6 col-md-6">
+                                                        <label>{`Child ${childIndex + 1} Age`}</label>
+                                                        <select
+                                                          name={`room${roomIndex}_child${childIndex}_age`}
+                                                          {...registerForm4(`room${roomIndex}_child${childIndex}_age`)}
+                                                          value={age}
+                                                          onChange={(e) =>
+                                                            setRoomsState((prev) =>
+                                                              prev.map((r, idx) =>
+                                                                idx === roomIndex
+                                                                  ? {
+                                                                      ...r,
+                                                                      childrenAges: r.childrenAges.map((a, ci) =>
+                                                                        ci === childIndex ? parseInt(e.target.value, 10) : a
+                                                                      ),
+                                                                    }
+                                                                  : r
+                                                              )
+                                                            )
+                                                          }
+                                                          className="form-select select-sm"
+                                                        >
+                                                          {[...Array(10)].map((_, i) => (
+                                                            <option key={i} value={i + 1}>
+                                                              {i + 1}
+                                                            </option>
+                                                          ))}
+                                                        </select>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+
+                                                    {/* Hidden Inputs */}
+                                                    <input
+                                                    type="hidden"
+                                                    {...registerForm4(`room${roomIndex}_adults` )}
+                                                    value={roomsState[roomIndex].adults}
+                                                    />
+                                                    <input
+                                                    type="hidden"
+                                                    {...registerForm4(`room${roomIndex}_children`)}
+                                                    value={roomsState[roomIndex].children}
+                                                    />
+
+                                                </div>
+                                              ))}
+
+                                      </AccordionDetails>
+                                    </Accordion>
+                                  
+                                  </div>
+
+                                    <input id="room" type="hidden" {...registerForm4("room")} value={rooms} />
+                                    <input type="hidden" {...registerForm4 ("request_type")} value="hotel_search" />
+
+                                    <div className="col-lg-12">
+                                      <Button type="submit" className="rounded-4" variant="contained" fullWidth size="small">Search Hotel</Button>
                                     </div>
-                                  ))}
-                                </div>
-
-                                </AccordionDetails>
-                                </Accordion>
-                            
-                            </div>
-
-                              <input id="adult4" type="hidden" {...registerForm4 ("adult")} value={adults} />
-                              <input id="child4" type="hidden" {...registerForm4 ("child")} value={children} />
-                              <input id="room" type="hidden" {...registerForm4 ("room")} value={rooms} />
-                              <input type="hidden" {...registerForm4 ("request_type")} value="hotel_search" />
-
-                              <div className="col-lg-12">
-                                <Button type="submit" className="rounded-4" variant="contained" fullWidth size="small">Search Hotel</Button>
-                              </div>
-                            </div>
-                          </form>
+                                  </div>
+                                </form>
                           </Offcanvas.Body>
-                        </Offcanvas>
-			 
+                      </Offcanvas>
 
-                      </div>
-                  </div>
                 </main>
                 <div className="bg-footer"></div>
 			          <Footer />
