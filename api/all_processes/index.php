@@ -931,6 +931,50 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		echo json_encode($response);
 	}
 
+	if(trim($request->request_type) == 'add_hotel_to_cart'){
+
+		$sessionId = sanitizeInput($request->session);
+		$roomId = sanitizeInput($request->roomId);
+		$hotelCityCode = sanitizeInput($request->hotelCityCode);
+		$hotelCode = sanitizeInput($request->hotelCode);
+		$chainCode = sanitizeInput($request->chainCode);
+		$hotelCodeContext = sanitizeInput($request->hotelCodeContext);
+		$checkInDate = sanitizeInput($request->checkInDate);
+		$checkOutDate = sanitizeInput($request->checkOutDate);
+		$adults = sanitizeInput($request->adults);
+		$children = sanitizeInput($request->children);
+		$ratePlanCode = sanitizeInput($request->children);
+		$bookingCode = sanitizeInput($request->bookingCode);
+		$guaranteeType = sanitizeInput($request->guaranteeType);
+		$roomTypeCode = sanitizeInput($request->roomTypeCode);
+		$roomRate = sanitizeInput($request->roomRate);
+		 // Construct the payload
+		 $postData = array(
+			'SessionId' => $sessionId,
+			'RoomId' => $roomId,
+			'HotelCityCode' => $hotelCityCode,
+			'HotelCode' => $hotelCode,
+			'ChainCode' => $chainCode,
+			'HotelCodeContext' => $hotelCodeContext,
+			'CheckInDate' => $checkInDate,
+			'CheckOutDate' => $checkOutDate,
+			'Adults' => $adults,
+			'Children' => $children,
+			//'RoomIds' => $roomIds,
+			'Room' => array(
+				'RatePlanCode' => $ratePlanCode,
+				'BookingCode' => $bookingCode,
+				'GuaranteeType' => $guaranteeType,
+				'RoomTypeCode' => $roomTypeCode,
+				'RoomRate' => $roomRate,
+			)
+		);
+		$search_url = $website_url.'/cart/hotel/add';
+		$resp = curlwithBody($search_url,$api_key,$postData);
+		echo json_encode($resp);
+
+	}
+
 	if(trim($request->request_type) == 'search_destination') {
 		
 		$search = sanitizeInput($request->term);
@@ -992,16 +1036,35 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		$apiPayload['checkOutDate'] = $request->checkout_date ?? null;
 		$apiPayload['placeId'] = $request->destination ?? null;
 		$apiPayload['roomCount'] = $roomCount;
-		$apiPayload['page'] = 1;
+		$apiPayload['page'] = $page;
 
 		// Build the query string from $apiPayload
 		$build_query = http_build_query($apiPayload);
 
 		$search_url = $website_url.'hotel/search?'.''. $build_query .'';
 		$resp = curlwithHeader($search_url,$api_key);
-	
-		//header('Content-Type: application/json');
-		echo json_encode($resp);
+
+		$hotelChainCodes = []; $hotelAMenities = [];
+
+		foreach($resp['Hotels'] as $chain){
+			
+			$d = $chain['ChainName'];
+			if (!in_array($d, $hotelChainCodes) && !empty($d)){
+				$hotelChainCodes[] = $d;
+			}
+
+			
+			foreach ($chain['HotelAmenitiesCollection'] as $key => $amenities) {
+				$h = $amenities['Name'];
+				if (!in_array($h, $hotelAMenities) && !empty($h)){
+					$hotelAMenities[] = $h;
+				}
+			}
+		}
+
+		$response = ["status" => 0, 'hotelAMenities' => $hotelAMenities, 'chainCode' => $hotelChainCodes, 'allresults' => $resp, 'Hotels' => $resp['Hotels'] ?? [], 'SessionId' => $resp['SessionId'], 'PaginationData' => $resp['PaginationData']];
+		
+		echo json_encode($response);
 	}
 
 	if (trim($request->request_type) == 'hotel_detail') {
@@ -1018,11 +1081,6 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		echo json_encode($resp);
 	}
 
-	
-
-
-	
-	
 	if(trim($request->request_type)=='check_payment'){
 	
 		$curl = curl_init();

@@ -28,6 +28,8 @@ import Slider from "react-slick";
 import ReadMoreLess from "../../components/ReadMoreLess";
 import formatTime from '../../components/formatTime';
 import formatDate from '../../components/formatDate';
+import toast, { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
 
 
 const HotelDetails = () => {
@@ -48,6 +50,8 @@ const HotelDetails = () => {
     const [pagination, setPagination] = useState();
     const [nav1, setNav1] = useState(null);
     const [nav2, setNav2] = useState(null);
+    const [adults, setAdults] = useState(params.get('adults') || 0);
+    const [children, setChildren] = useState(params.get('children') || 0);
     const [currentSlide, setCurrentSlide] = useState(0);
 
     const slider1 = useRef(null);
@@ -92,7 +96,15 @@ const HotelDetails = () => {
          try {
            const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
            console.log(response.data);
-           setHotelDetail(response.data);
+           if(response.data.StatusCode){
+                setTimeout(() => {
+                    router.back();
+                }, 4000);
+           }else{
+                setHotelDetail(response.data);
+                setSessionId(response.data.SessionId);
+           }
+           
          } catch (error) {
            console.error('Error sending request:', error);
          } finally {
@@ -103,6 +115,64 @@ const HotelDetails = () => {
 
        fetchData();
    }, [payload,router]);
+
+
+const addHotelToCart = async ({
+  sessionId,
+  roomId,
+  hotelCityCode,
+  hotelCode,
+  chainCode,
+  hotelCodeContext,
+  checkInDate,
+  checkOutDate,
+  adults,
+  children,
+  ratePlanCode,
+  bookingCode,
+  guaranteeType,
+  roomTypeCode,
+  roomRate,
+  request_type
+}) => {
+  // Construct the payload object
+  const payload = {
+    sessionId,
+    roomId,
+    hotelCityCode,
+    hotelCode,
+    chainCode,
+    hotelCodeContext,
+    checkInDate,
+    checkOutDate,
+    adults,
+    children,
+    ratePlanCode,
+    bookingCode,
+    guaranteeType,
+    roomTypeCode,
+    roomRate,
+    request_type
+  };
+
+  try {
+    setIsLoading(true);
+    // Send the POST request
+    console.log(payload);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`,payload);
+
+    // Handle the response
+    console.log("Response Data:", response.data);
+
+    // Example: Set state or perform actions with the response data
+    // setHotelDetail(response.data); // Uncomment if you have a `setHotelDetail` function
+  } catch (error) {
+    console.error("Error sending request:", error);
+  } finally {
+    console.log("Request completed.");
+    setIsLoading(false); // Uncomment if you manage loading state
+  }
+};
 
       return (
         <>
@@ -171,8 +241,7 @@ const HotelDetails = () => {
                                             <ReadMoreLess text={hoteldetails?.Hotels[0]?.HotelDescription[0]} limit={250} />
                                         } 
                                     </div>
-                                
-
+                            
                             </div>
                             
                         </div>
@@ -227,10 +296,51 @@ const HotelDetails = () => {
                                                 <li className="list-group-item">Amenities: Free Wi-Fi, AC, TV, Mini-bar</li>
                                                 <li className="list-group-item">Number of Beds: {p.NumberOfBeds}</li>
                                                 <li className="list-group-item">Number of Rooms: {p.NumberOfRooms}</li>
-                                                <li className="list-group-item">Cancellation Policy: Cancellation fee of {p.CancellationPenalties[0].CurrencyCode}{FormatNumberWithComma(p.CancellationPenalties[0].Amount)} if cancelled after {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)}(Local Time)</li>
+                                                <li className="list-group-item">
+                                                <p>
+                                                    Cancellation Policy:{" "}
+                                                    {p.CancellationPenalties[0].Amount > 0 ? (
+                                                        <>
+                                                        Cancellation fee of {p.CancellationPenalties[0].CurrencyCode}
+                                                        {FormatNumberWithComma(p.CancellationPenalties[0].Amount)} if cancelled after{" "}
+                                                        {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)} (Local Time)
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                        No Cancellation fee if cancelled before{" "}
+                                                        {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)} (Local Time)
+                                                        </>
+                                                    )}
+                                                    </p>
+                                                </li>
                                                 </ul>
-                                                <a href="#" className="btn btn-gray mt-3 btn-sm">Book Now</a>
-                                            </div>
+
+                                                <button
+                                                    className="btn btn-gray mt-3 btn-sm"
+                                                    onClick={() =>
+                                                        addHotelToCart({
+                                                        sessionId: sessionid,
+                                                        roomId: p.Id,
+                                                        hotelCityCode: hoteldetails?.Hotels[0].HotelCityCode,
+                                                        hotelCode: hoteldetails?.Hotels[0].HotelCode,
+                                                        chainCode: hoteldetails?.Hotels[0].ChainCode,
+                                                        hotelCodeContext: hoteldetails?.Hotels[0].HotelCodeContext,
+                                                        checkInDate: hoteldetails?.Hotels[0].CheckInDate,
+                                                        checkOutDate: hoteldetails?.Hotels[0].CheckOutDate,
+                                                        adults: adults,
+                                                        children: children,
+                                                        ratePlanCode: p.RatePlanCode,
+                                                        bookingCode: p.BookingCode,
+                                                        guaranteeType: p.GuaranteeType,
+                                                        roomTypeCode: p.RoomTypeCode,
+                                                        roomRate: p.RoomRate,
+                                                        request_type: "add_hotel_to_cart",
+                                                        })
+                                                    }
+                                                    >
+                                                    Book Now
+                                                    </button> 
+                                                </div>
                                         </div>
                                     </div>
                                 ))}

@@ -39,12 +39,15 @@ const HotelList = () => {
     const [filtershow, setFiltershow] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [Hotels, setHotels] = useState();
+    const [hotelChain, setHotelChain] = useState();
+    const [amenities, setAmenities] = useState();
     const [minimumprice, setMinimumPrice] = useState(0);
     const [maximumprice, setMaximumPrice] = useState(0);
     const [sessionid, setSessionId] = useState();
     const [pagination, setPagination] = useState();
 
 	  const [page, setPage] = React.useState(1);
+	  const [totalguests, setTotalGuests] = React.useState(0);
 
 	  const [rooms, setRooms] = useState(parseInt(params.get('room') || 1));
     const [roomsState, setRoomsState] = useState([]);
@@ -63,11 +66,20 @@ const HotelList = () => {
 
       setRoomsState(newRoomsState);
 
+      // Calculate total guests
+      const totalAdults = newRoomsState.reduce((sum, room) => sum + room.adults, 0);
+      const totalChildren = newRoomsState.reduce((sum, room) => sum + room.children, 0);
+
+      setTotalGuests({ adults: totalAdults, children: totalChildren, total: totalAdults + totalChildren });
+
+
     }, [params, rooms]);
 
     const reloadPage = () => {
       router.refresh(); // Reloads the page without a full browser reload
     };
+
+    console.log(roomsState);
 
      // Memoize formValues
     const formValues = useMemo(() => {
@@ -76,10 +88,15 @@ const HotelList = () => {
       for (const [key, value] of params.entries()) {
         values[key] = value;
       }
+
+      values.page = page;
+
       return values;
-    }, [searchParams]);
+    }, [searchParams,page]);
+    console.log(totalguests.adults);
 
     useEffect(() => {
+
       setIsLoading(true);
 
       const fetchData = async () => {
@@ -91,6 +108,9 @@ const HotelList = () => {
           console.log(response.data);
           setHotels(response.data.Hotels);
           setSessionId(response.data.SessionId);
+          setPagination(response.data.PaginationData);
+          setHotelChain(response.data.chainCode);
+          setAmenities(response.data.hotelAMenities);
         } catch (error) {
           console.error("Error fetching data", error);
         } finally {
@@ -99,7 +119,7 @@ const HotelList = () => {
       };
 
       fetchData();
-    }, [formValues]); // Use memoized values as dependency
+    }, [formValues,page]); // Use memoized values as dependency
 
     const fetchHoteldetails = (hotelid) => {
       try {
@@ -111,7 +131,7 @@ const HotelList = () => {
       }
     }
 
-    //console.log(Hotels);
+    console.log(rooms);
 
   
     //const [hotelInputValue, setHotelInputValue] = useState(`${adults} Adult ${children} Child ${rooms} Room`);
@@ -133,51 +153,100 @@ const HotelList = () => {
       params, page
     ]);*/
 
-      const { register: registerForm4, watch: watchForm4, handleSubmit: handleSubmitForm4, formState: { errors: errorsForm4 }, setValue: setValueForm4, control: controlForm4, unregister: unregisterForm4 } = useForm();
-
-      const handleRoomChange = (roomIndex, field, delta) => {
-        const updatedValue = Math.max(0, roomsState[roomIndex][field] + delta);
-      
-        setRoomsState((prev) =>
-          prev.map((room, idx) =>
-            idx === roomIndex
-              ? {
-                  ...room,
-                  [field]: updatedValue,
-                  ...(field === "children" && { childrenAges: room.childrenAges.slice(0, updatedValue) }),
-                }
-              : room
-          )
-        );
-      
-        // Update form values
-        setValueForm4(`room${roomIndex}_${field}`, updatedValue);
-      };
-      
+    const { 
+      register: registerForm4, 
+      watch: watchForm4, 
+      handleSubmit: handleSubmitForm4, 
+      formState: { errors: errorsForm4 }, 
+      setValue: setValueForm4, 
+      control: controlForm4, 
+      unregister: unregisterForm4 
+    } = useForm();
     
-      const handleRoomsChange = (delta) => {
+    const handleRoomChange = (roomIndex, field, delta) => {
+      setRoomsState((prev) =>
+        prev.map((room, index) => {
+          if (index === roomIndex) {
+            if (field === "children") {
+              const newChildrenCount = Math.max(0, room.children + delta);
+    
+              // Dynamically adjust childrenAges array
+              const updatedRoom = {
+                ...room,
+                children: newChildrenCount,
+                childrenAges:
+                  newChildrenCount > room.children
+                    ? [...room.childrenAges, 1] // Add default age
+                    : room.childrenAges.slice(0, newChildrenCount), // Remove excess ages
+              };
+    
+              // Update the form values
+              setValueForm4(`room${roomIndex}_children`, newChildrenCount);
+              updatedRoom.childrenAges.forEach((age, childIndex) => {
+                setValueForm4(`room${roomIndex}_child${childIndex}_age`, age);
+              });
+    
+              return updatedRoom;
+            }
+    
+            if (field === "adults") {
+              const newAdultCount = Math.max(1, room.adults + delta);
+              setValueForm4(`room${roomIndex}_adults`, newAdultCount);
+              return {
+                ...room,
+                adults: newAdultCount,
+              };
+            }
+          }
+          return room;
+        })
+      );
+    };
+    
+    const handleRoomsChange = (delta) => {
+      const newRooms = Math.max(1, rooms + delta);
+    
+      // Clear form data for removed rooms
+      if (newRooms < rooms) {
+        for (let i = newRooms; i < rooms; i++) {
+          unregisterForm4(`room${i}_adults`);
+          unregisterForm4(`room${i}_children`);
+          // Unregister all children ages dynamically
+          roomsState[i].childrenAges.forEach((_, childIndex) => {
+            unregisterForm4(`room${i}_child${childIndex}_age`);
+          });
+        }
+      }
+    
+      // Adjust roomsState array
+      setRoomsState((prev) => {
+        const updatedRoomsState =
+          newRooms > prev.length
+            ? [
+                ...prev,
+                ...Array.from({ length: newRooms - prev.length }).map(() => ({
+                  adults: 1,
+                  children: 0,
+                  childrenAges: [],
+                })),
+              ]
+            : prev.slice(0, newRooms);
+    
+        return updatedRoomsState;
+      });
+    
+      setRooms(newRooms);
+    
+      // Debugging logs
+      console.log("Rooms Updated:", newRooms);
+    };
 
-        const newRooms = Math.max(1, rooms + delta);
-         // Clear form data for removed rooms
-         if (newRooms < rooms) {
-          for (let i = newRooms; i < rooms; i++) {
-            unregisterForm4(`room${i}_adults`);
-            unregisterForm4(`room${i}_children`);
-            unregisterForm4(`room${i}_child${i}_age`);
-          }
-          }
-          setRooms(newRooms);
-          //console.log(newRooms);
-          // Adjust roomsState array
-          setRoomsState((prev) =>
-            newRooms > prev.length
-            ? [...prev, { adults: 1, children: 0 }]
-              : prev.slice(0, newRooms)
-            );
-        
-          setValueForm4('room', newRooms);
-        
-        };
+    useEffect(() => {
+      // Sync "rooms" state with form field
+      setValueForm4("room", rooms);
+    }, [rooms, setValueForm4]);
+    
+      
 
           // Single submit function
         const onSubmit = (data, formName) => {
@@ -230,6 +299,13 @@ const HotelList = () => {
           </div>
         );
       };
+
+      const handleChainCodeCheckboxChange = (item) => {
+        console.log(item);
+      }
+      const handleAmenitiesCheckboxChange = (item) => {
+        console.log(item);
+      }
       
       
 
@@ -485,8 +561,9 @@ const HotelList = () => {
 
                                 <div key={k} className="col-xl-4 col-lg-6 col-md-6">
                                 <div className="card-journey-small background-card"> 
-                                  <div className="card-image"> <a className="label" href="#"><HotelAwards awards={d.HotelAwards} /></a>
-                                    <a href="hotel-detail.html">
+                                  <div className="card-image"> 
+                                    <a className="label" href="#"><HotelAwards awards={d.HotelAwards} /></a>
+                                    <Link href={`/hotel_detail?id=${d.Id}&session=${sessionid}&adults=${totalguests?.adults}&children=${totalguests?.children}`} >
                                       <Image 
                                         layout="intrinsic" 
                                         alt="Hotel Image" 
@@ -496,14 +573,14 @@ const HotelList = () => {
                                         priority
                                         src={d.HotelMainImage || "/assets/imgs/hotelimage.gif"}
                                       />
-                                      </a>
+                                      </Link>
                                   </div>
                                   <div className="card-info"> 
                                     <div className="card-rating"> 
                                       <div className="card-left"> </div>
                                       <div className="card-right"> <span className=""></span></div>
                                     </div>
-                                    <div className="card-title"><Link href={`/hotel_detail?id=${d.Id}&session=${sessionid}`} className="heading-6 neutral-1000">{d.HotelName}</Link></div>
+                                    <div className="card-title"><Link href={`/hotel_detail?id=${d.Id}&session=${sessionid}&adults=${totalguests?.adults}&children=${totalguests?.children}`} className="heading-6 neutral-1000">{d.HotelName}</Link></div>
                                     <div className="card-program"> 
                                       <div className="card-location"> 
                                         <p className="text-location text-sm-medium neutral-500">{d.HotelAddress.StreetAddress}, {d.HotelAddress.CityName}, {d.HotelAddress.RegionName}, {d.HotelAddress.ZIP}, {d.HotelAddress.CountryCode}</p>
@@ -513,7 +590,7 @@ const HotelList = () => {
                                           <h6 className="text-md-medium fw-bold neutral-1000">{d.CurrencyCode}{FormatNumberWithComma(d.DailyRatePerRoom)}</h6>
                                           <p className="text-sm-medium neutral-500">/ night</p>
                                         </div>
-                                        <div className="card-button"> <Link className="btn btn-gray btn-sm" href={`/hotel_detail?id=${d.Id}&session=${sessionid}`}>View Details</Link></div>
+                                        <div className="card-button"> <Link className="btn btn-gray btn-sm" href={`/hotel_detail?id=${d.Id}&session=${sessionid}&adults=${totalguests?.adults}&children=${totalguests?.children}`}>View Details</Link></div>
                                       </div>
                                     </div>
                                   </div>
@@ -539,21 +616,74 @@ const HotelList = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="content-left order-lg-first">
+
+                        <div className="content-left order-lg-first d-none d-lg-block">
                          
+                            <div className="mb-3">
+                              <label>Sort resuts by</label>
+                              <select className="form-select form-control">
+                                <option value="">Sort by</option>
+                                <option value="cheapest first">Price (Cheapest first)</option>
+                                <option value="shortest first">Duration (Shortest first)</option>
+                                <option value="departure earliest">Departure Outbound (Earliest)</option>
+                                <option value="departure latest">Departure Outbound (Latest)</option>
+                                <option value="arrival earliest">Arrival Outbound (Earliest)</option>
+                                <option value="arrival latest">Arrival Outbound (Latest)</option>
+                              </select>
+                            </div>
+
+                            <div className='mb-3'>
+                            <label>Hotel Chains</label>
+                            <ul className="list-filter-checkbox px-0">
+                              {hotelChain && hotelChain.map((item, index) => {
+                                // Determine if the current item is in the first 7 or should be in the collapse
+                             
+                                  return (
+                                  <li key={index}>
+                                    <label className="cb-container">
+                                    <input checked="" onChange={() => handleChainCodeCheckboxChange(item)} type="checkbox" value={item} />
+                                    <span className="text-sm-medium">{item}</span>
+                                    <span className="checkmark"></span>
+                                    </label>
+                                   
+                                  </li>
+                                  );
+                                
+                                return null; // Return nothing if the item is not to be displayed
+                              })}
+                              </ul>
+                            </div>
+
+                            <div className='mb-3'>
+                              <label>Hotel Amenities</label>
+                                <ul className="list-filter-checkbox px-0">
+                                  {amenities && amenities.map((item, index) => {
+                                    // Determine if the current item is in the first 7 or should be in the collapse
+                                
+                                      return (
+                                      <li key={index}>
+                                        <label className="cb-container">
+                                        <input checked="" onChange={() => handleAmenitiesCheckboxChange(item)} type="checkbox" value={item} />
+                                        <span className="text-sm-medium">{item}</span>
+                                        <span className="checkmark"></span>
+                                        </label>
+                                      
+                                      </li>
+                                      );
+                                    
+                                    return null; // Return nothing if the item is not to be displayed
+                                  })}
+                                  </ul>
+                            </div>
+
                         </div>
 
                       </div>
 
                       
-                      
                      )}
                     </div>
                   </section>
-
-                  <Modal id="exampleModal" title="My Modal">
-                    <p>This is the content of the modal.</p>
-                  </Modal>
 
                       <Offcanvas show={searchshow} onHide={handleClose}>
                           <Offcanvas.Header closeButton>
@@ -757,6 +887,67 @@ const HotelList = () => {
                                     </div>
                                   </div>
                                 </form>
+                          </Offcanvas.Body>
+                      </Offcanvas>
+
+                      <Offcanvas show={filtershow} onHide={handleFilterClose}>
+                          <Offcanvas.Header closeButton>
+                            <Offcanvas.Title><i className="bx bx-edit"></i> Filter Search</Offcanvas.Title>
+                          </Offcanvas.Header>
+                          <Offcanvas.Body className="bg-light">
+                              <div className="mb-3">
+                                <label>Sort results by</label>
+                                <select className="form-select form-control">
+                                  <option value="">Select Sort Option</option>
+                                  <option value="cheapest first">Price (Cheapest first)</option>
+                                  <option value="highest first">Price (Highest first)</option>
+                                  <option value="hotel name">Hotel Name</option>
+                                </select>
+                              </div>
+
+                              <div className='mb-3'>
+                              <label>Hotel Chains</label>
+                              <ul className="list-filter-checkbox px-0">
+                                {hotelChain && hotelChain.map((item, index) => {
+                                  // Determine if the current item is in the first 7 or should be in the collapse
+                              
+                                    return (
+                                    <li key={index}>
+                                      <label className="cb-container">
+                                      <input checked="" onChange={() => handleChainCodeCheckboxChange(item)} type="checkbox" value={item} />
+                                      <span className="text-sm-medium">{item}</span>
+                                      <span className="checkmark"></span>
+                                      </label>
+                                    
+                                    </li>
+                                    );
+                                  
+                                  return null; // Return nothing if the item is not to be displayed
+                                })}
+                                </ul>
+                              </div>
+
+                              <div className='mb-3'>
+                              <label>Hotel Amenities</label>
+                                <ul className="list-filter-checkbox px-0">
+                                  {amenities && amenities.map((item, index) => {
+                                    // Determine if the current item is in the first 7 or should be in the collapse
+                                
+                                      return (
+                                      <li key={index}>
+                                        <label className="cb-container">
+                                        <input checked="" onChange={() => handleAmenitiesCheckboxChange(item)} type="checkbox" value={item} />
+                                        <span className="text-sm-medium">{item}</span>
+                                        <span className="checkmark"></span>
+                                        </label>
+                                      
+                                      </li>
+                                      );
+                                    
+                                    return null; // Return nothing if the item is not to be displayed
+                                  })}
+                                  </ul>
+                            </div>
                           </Offcanvas.Body>
                       </Offcanvas>
 

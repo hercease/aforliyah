@@ -58,14 +58,14 @@ const FlightDetail = () => {
 
     return newPayload;
 	}, [
-    params
+    	params
 	]);
 	
 	useEffect(() => {
 		 setIsLoading(true);
 		const fetchData = async () => {
 		  try {
-			const response  = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
+			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
 			if(response.data.status==0){
 				setAir(response.data.air);
 				setAllresponse(response.data.allresponse);
