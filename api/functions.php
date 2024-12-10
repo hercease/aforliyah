@@ -184,9 +184,9 @@
 		];
 	}
 	
-	function Insertbooking($conn,$email,$firstname,$lastname,$reference,$amount,$passport,$phone,$date,$status){
-		$stmt4 = $conn->prepare("INSERT INTO flight_booking (email,firstname,lastname,phone,reference_no,amount,passport_no,date,status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-		$stmt4->bind_param("sssssssss",$email,$firstname,$lastname,$phone,$reference,$amount,$passport,$date,$status);
+	function Insertbooking($conn,$email,$firstname,$lastname,$reference,$amount,$passport,$phone,$date,$status,$booking_type){
+		$stmt4 = $conn->prepare("INSERT INTO flight_booking (email,firstname,lastname,phone,reference_no,amount,passport_no,date,status,booking_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		$stmt4->bind_param("ssssssssss",$email,$firstname,$lastname,$phone,$reference,$amount,$passport,$date,$status,$booking_type);
 		$stmt4->execute();
 		$stmt4->close();
 		

@@ -933,45 +933,35 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 
 	if(trim($request->request_type) == 'add_hotel_to_cart'){
 
-		$sessionId = sanitizeInput($request->session);
+		$sessionId = sanitizeInput($request->sessionId);
 		$roomId = sanitizeInput($request->roomId);
-		$hotelCityCode = sanitizeInput($request->hotelCityCode);
-		$hotelCode = sanitizeInput($request->hotelCode);
-		$chainCode = sanitizeInput($request->chainCode);
-		$hotelCodeContext = sanitizeInput($request->hotelCodeContext);
-		$checkInDate = sanitizeInput($request->checkInDate);
-		$checkOutDate = sanitizeInput($request->checkOutDate);
 		$adults = sanitizeInput($request->adults);
 		$children = sanitizeInput($request->children);
-		$ratePlanCode = sanitizeInput($request->children);
-		$bookingCode = sanitizeInput($request->bookingCode);
-		$guaranteeType = sanitizeInput($request->guaranteeType);
-		$roomTypeCode = sanitizeInput($request->roomTypeCode);
-		$roomRate = sanitizeInput($request->roomRate);
 		 // Construct the payload
 		 $postData = array(
 			'SessionId' => $sessionId,
 			'RoomId' => $roomId,
-			'HotelCityCode' => $hotelCityCode,
-			'HotelCode' => $hotelCode,
-			'ChainCode' => $chainCode,
-			'HotelCodeContext' => $hotelCodeContext,
-			'CheckInDate' => $checkInDate,
-			'CheckOutDate' => $checkOutDate,
 			'Adults' => $adults,
-			'Children' => $children,
-			//'RoomIds' => $roomIds,
-			'Room' => array(
-				'RatePlanCode' => $ratePlanCode,
-				'BookingCode' => $bookingCode,
-				'GuaranteeType' => $guaranteeType,
-				'RoomTypeCode' => $roomTypeCode,
-				'RoomRate' => $roomRate,
-			)
+			'Children' => $children
 		);
+		
 		$search_url = $website_url.'/cart/hotel/add';
 		$resp = curlwithBody($search_url,$api_key,$postData);
-		echo json_encode($resp);
+		// SQL query to select data
+		$sql = "SELECT * FROM account_numbers";
+		$result = $conn->query($sql);
+
+		// Initialize an empty array
+		$bankArray = [];
+
+		if ($result->num_rows > 0) {
+			// Loop through the result set and store each row into the array
+			while($row = $result->fetch_assoc()) {
+				$bankArray[] = $row;
+			}
+		}
+		$response = ['bankaccount' => $bankArray, 'hotel' => $resp];
+		echo json_encode($response);
 
 	}
 
@@ -994,78 +984,110 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 	if (trim($request->request_type) == 'hotel_search') {
 		$apiPayload = [];
 		$roomCount = isset($request->room) ? (int)$request->room : 0;
+		$sortby = sanitizeInput($request->sortby ?? "");
+		$amenities = $request->amenities ?? [];
+		$chains = $request->chains ?? [];
 	
 		for ($i = 0; $i < $roomCount; $i++) {
-
-			if($i==0){
-
-				if (isset($request->{"room{$i}_adults"})) {
-					$apiPayload["adults"] = (int)$request->{"room{$i}_adults"};
-				}
-		
-				if (isset($request->{"room{$i}_children"})) {
-					$apiPayload["children"] = (int)$request->{"room{$i}_children"};
-				}
-		
-				for ($j = 0; $j < ($request->{"room{$i}_children"} ?? 0); $j++) {
-					if (isset($request->{"room{$i}_child{$j}_age"})) {
-						$apiPayload["childrenAge"] = (int)$request->{"room{$i}_child{$j}_age"};
-					}
-				}
-
-			}else{
-
-				if (isset($request->{"room{$i}_adults"})) {
-					$apiPayload["adults" . ($i + 1)] = (int)$request->{"room{$i}_adults"};
-				}
-		
-				if (isset($request->{"room{$i}_children"})) {
-					$apiPayload["children" . ($i + 1)] = (int)$request->{"room{$i}_children"};
-				}
-		
-				for ($j = 0; $j < ($request->{"room{$i}_children"} ?? 0); $j++) {
-					if (isset($request->{"room{$i}_child{$j}_age"})) {
-						$apiPayload["childrenAge" . ($i + 1)] = (int)$request->{"room{$i}_child{$j}_age"};
-					}
+			$roomPrefix = $i == 0 ? "" : ($i + 1);
+	
+			if (isset($request->{"room{$i}_adults"})) {
+				$apiPayload["adults{$roomPrefix}"] = (int)$request->{"room{$i}_adults"};
+			}
+	
+			if (isset($request->{"room{$i}_children"})) {
+				$apiPayload["children{$roomPrefix}"] = (int)$request->{"room{$i}_children"};
+			}
+	
+			for ($j = 0; $j < ($request->{"room{$i}_children"} ?? 0); $j++) {
+				if (isset($request->{"room{$i}_child{$j}_age"})) {
+					$apiPayload["childrenAge{$roomPrefix}"][] = (int)$request->{"room{$i}_child{$j}_age"};
 				}
 			}
-			
 		}
 	
 		$apiPayload['checkInDate'] = $request->checkin_date ?? null;
 		$apiPayload['checkOutDate'] = $request->checkout_date ?? null;
 		$apiPayload['placeId'] = $request->destination ?? null;
 		$apiPayload['roomCount'] = $roomCount;
-		$apiPayload['page'] = $page;
-
-		// Build the query string from $apiPayload
+		$apiPayload['page'] = $page ?? 1;
+	
 		$build_query = http_build_query($apiPayload);
+		$search_url = "{$website_url}hotel/search?{$build_query}";
+		$resp = curlwithHeader($search_url, $api_key);
+	
+		if (!isset($resp['Hotels']) || !is_array($resp['Hotels'])) {
+			echo json_encode(['status' => 1, 'message' => 'No hotels found.']);
+			exit;
+		}
+	
+		$hotelChainCodes = [];
+		$hotelAmenities = [];
+		$hotels = $resp['Hotels'];
+	
+		foreach ($hotels as $chain) {
 
-		$search_url = $website_url.'hotel/search?'.''. $build_query .'';
-		$resp = curlwithHeader($search_url,$api_key);
-
-		$hotelChainCodes = []; $hotelAMenities = [];
-
-		foreach($resp['Hotels'] as $chain){
-			
-			$d = $chain['ChainName'];
-			if (!in_array($d, $hotelChainCodes) && !empty($d)){
-				$hotelChainCodes[] = $d;
+			if (!empty($chain['ChainName'])) {
+				$hotelChainCodes[$chain['ChainName']] = true;
 			}
-
-			
-			foreach ($chain['HotelAmenitiesCollection'] as $key => $amenities) {
-				$h = $amenities['Name'];
-				if (!in_array($h, $hotelAMenities) && !empty($h)){
-					$hotelAMenities[] = $h;
+	
+			foreach ($chain['HotelAmenitiesCollection'] ?? [] as $amenities) {
+				if (!empty($amenities['Name'])) {
+					$hotelAmenities[$amenities['Name']] = true;
 				}
 			}
+			
 		}
 
-		$response = ["status" => 0, 'hotelAMenities' => $hotelAMenities, 'chainCode' => $hotelChainCodes, 'allresults' => $resp, 'Hotels' => $resp['Hotels'] ?? [], 'SessionId' => $resp['SessionId'], 'PaginationData' => $resp['PaginationData']];
+		if (!empty($chains)) {
+			$hotels = array_filter($hotels, function ($var) use ($chains) {  
+				return in_array($var['ChainName'], $chains);  
+			});
+			$hotels = array_values($hotels); // Re-index to ensure it becomes a proper array
+		}
 		
+		/*if (!empty($amenities)) {
+			$hotels = array_filter($hotels, function ($var) use ($amenities) {
+				$hotelamenities = array_column($var['HotelAmenitiesCollection'] ?? [], 'Name');
+				return !empty(array_intersect($amenities, $hotelamenities));
+			});
+		}*/
+		
+		if ($sortby === 'cheapest first') {
+			usort($hotels, static function ($a, $b) {
+				return $a['DailyRatePerRoom'] <=> $b['DailyRatePerRoom'];
+			});
+		}
+
+		if ($sortby === 'highest first') {
+			usort($hotels, static function ($a, $b) {
+				return $b['DailyRatePerRoom'] <=> $a['DailyRatePerRoom'];
+			});
+		}
+
+		if ($sortby === 'hotel name') {
+			usort($hotels, static function ($a, $b) {
+				return $a['HotelName'] <=> $b['HotelName'];
+			});
+		}
+
+		$total_records = count($hotels);
+		$hotels = array_slice($hotels, $offset, $limit);
+		$total_pages   = ceil($total_records / $limit);
+	
+		$response = [
+			'status' => 0,
+			'hotelAmenities' => array_keys($hotelAmenities),
+			'chainCode' => array_keys($hotelChainCodes),
+			'allResults' => $hi,
+			'Hotels' => $hotels ?? [],
+			'SessionId' => $resp['SessionId'] ?? '',
+			'PaginationData' => ['TotalPages' => $total_pages],
+		];
+	
 		echo json_encode($response);
 	}
+	
 
 	if (trim($request->request_type) == 'hotel_detail') {
 
@@ -1786,7 +1808,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 			if(isset($request->{'adult_title_0'})){
 				for ($i=0; $i < $adult_count; $i++){
 					$passport = $request->{"adult_passport_$i"};
-					$id = Insertbooking($conn,$email,$request->{"adult_firstname_$i"},$request->{"adult_lastname_$i"},$resp['ReferenceNumber'],$amount,$passport,$phone,$date,"");
+					$id = Insertbooking($conn,$email,$request->{"adult_firstname_$i"},$request->{"adult_lastname_$i"},$resp['ReferenceNumber'],$amount,$passport,$phone,$date,"","Flight");
 				}
 			}
 			
@@ -1794,7 +1816,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 			if(isset($request->{'infant_firstname_0'})){
 				for ($i=0; $i < $infant_count; $i++){
 					$passport = $request->{"infant_passport_$i"};
-					Insertbooking($conn,$email,$request->{"infant_firstname_$i"},$request->{"infant_lastname_$i"},$resp['ReferenceNumber'],$amount,$phone,$passport,$date,"");
+					Insertbooking($conn,$email,$request->{"infant_firstname_$i"},$request->{"infant_lastname_$i"},$resp['ReferenceNumber'],$amount,$passport,$phone,$date,"","Flight");
 				}
 			}
 			
@@ -1802,13 +1824,120 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 			if(isset($request->{'child_firstname_0'})){
 				for ($i=0; $i < $child_count; $i++){
 					$passport = $request->{"child_passport_$i"};
-					Insertbooking($conn,$email,$request->{"child_firstname_$i"},$request->{"child_lastname_$i"},$resp['ReferenceNumber'],$amount,$passport,$phone,$date,"");
+					Insertbooking($conn,$email,$request->{"child_firstname_$i"},$request->{"child_lastname_$i"},$resp['ReferenceNumber'],$amount,$passport,$phone,$date,"","Flight");
 				}
 			}
 			
 			echo json_encode(array("status" => 1, 'json' => $resp, 'id' => $id ));
 			
 		}
+	}
+
+	if(trim($request->request_type)=='book_hotel'){
+		$detect_country = detectCountry($jsonData);
+		$phonecode = $phoneCodes[$detect_country['country']];
+		$sign = "+";
+		$session_id = sanitizeInput($request->sessionid);
+		$amount = sanitizeInput($request->amount);
+		$payment_method = sanitizeInput($request->payment_method);
+		$phone =  $sign.''.$phonecode.''.$request->phone_0;
+		$date = date("Y-m-d H:i:s");
+		$status = "";
+		$year = date('Y', strtotime(' + 3 years'));
+		// Create an empty array to store the data
+		$data = array();
+		// Add NotesForAgent
+		$data['NotesForAgent'] = '';
+		// Create an array for Travellers
+		$data['Travellers'] = array();
+		// Add SessionId
+		$data['SessionId'] = $session_id;
+		$total_guest = $request->total_guest;
+
+		for ($i=0; $i < $total_guest; $i++){
+
+			$guests = array(
+				'IndexInSequence' => $i,
+				'Title' => sanitizeInput($request->{"title_$i"}),
+				'TypeCode' => sanitizeInput($request->{"typecode_$i"}),
+				'FirstName' => sanitizeInput($request->{"firstname_$i"}),
+				'MiddleName' => null,
+				'LastName' => sanitizeInput($request->{"lastname_$i"}),
+				'Email' => sanitizeInput($request->{"email_$i"} ?? null),
+				'CountryCode' => $detect_country['country'] ?? null,
+				'Phone' => $request->{"phone_$i"} ?? null,
+				'PhoneCode' => $request->{"typecode_$i"}=='ADT' ? $phonecode ?? null : null,
+				'Gender' => $request->{"gender_$i"},
+				'DateOfBirthString' => sanitizeInput($request->{"dob_$i"})
+			);
+
+			$data['Travellers'][] = $guests;
+		}
+
+		// Create an array for PaymentDetails
+		$data['PaymentDetails'] = array(
+			array(
+				'TravelType' => 'HOTEL',
+				'PaymentOption' => 'CreditCard',
+				'Address' => array(
+					'CountryCode' => "NG",
+					'CountryName' => "Nigeria",
+					'RegionName' => "Africa",
+					'ZIP' => '1000001',
+					'CityName' => "Lagos",
+					'StreetAddress' => 'Oyo Ibadan'
+				),
+				'CardInfo' => array(
+					'CardholderName' => 'Name On Card',
+					'CardType' => 'VI',
+					'CardTypeCode' => 'VI',
+					'CardNumber' => '4539726337080222',
+					'ExpirationMonth' => '02',
+					'ExpirationYear' => 2028,
+					'CVV' => '328',
+					'BankName' => null,
+					'BankPhone' => $phone
+				)
+			)
+		);
+		
+		
+		$url = $website_url.'/cart/book';
+		$resp = curlwithBody($url,$api_key,$data);
+		$index = 'StatusCode'; // Index you want to check
+
+		if (array_key_exists($index, $resp)){
+			
+			echo json_encode(array("status" => 0, "dat" => $data, "data" => $resp['ErrorMessage'].' '.$resp['ErrorId']));
+			
+		}else{
+
+			safelog($resp,'api_response.log');
+			
+			if(isset($request->bank)){
+				
+				$bank = sanitizeInput($request->bank);
+				
+				$stmt = $conn->prepare("SELECT bank_name, account_number, account_name FROM account_numbers where bank_name = ?");
+				$stmt->bind_param("s",$bank);
+				$stmt->execute();
+				$stmt->store_result();
+				$stmt->bind_result($bank_name, $account_number, $account_name);
+				$stmt->fetch();
+					$bank_name; $account_number; $account_name;
+				$stmt->close();
+				
+			}
+
+			for ($i=0; $i < $total_guest; $i++){
+				$passport = $request->{"passport_$i"};
+				$id = Insertbooking($conn,$email,$request->{"firstname_$i"},$request->{"lastname_$i"},$resp['ReferenceNumber'],$amount,$passport,$phone,$date,"","Hotel");
+			}
+
+			echo json_encode(array("status" => 1, 'json' => $resp, 'id' => $id ));
+		}
+
+
 	}
 	
 	if(trim($request->request_type)=='fetch_flight'){

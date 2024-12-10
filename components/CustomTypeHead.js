@@ -23,7 +23,7 @@ const CustomTypeahead = ({
   const [initialQueryUsed, setInitialQueryUsed] = useState(false);
 
 
-	   const fetchData = useCallback((query) => {
+	  const fetchData = useCallback((query) => {
 		fetch(`${fetchUrl}&q=${query}`)
 		  .then((response) => response.json())
 		  .then((data) => {

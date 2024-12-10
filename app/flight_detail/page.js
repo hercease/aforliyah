@@ -644,7 +644,7 @@ const FlightDetail = () => {
 							  const maxDate = new Date(currentDate.setFullYear(currentDate.getFullYear() - 11)); // Maximum 11 years old
 							  const minDate = new Date(currentDate.setFullYear(currentDate.getFullYear() - 3));  // Minimum 3 years old
 
-							  if (selectedDate >= maxDate && selectedDate <= minDate) {
+							  if (selectedDate >= maxDate || selectedDate <= minDate) {
 								return "Age must be between 3 and 11 years.";
 							  }
 							  

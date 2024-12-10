@@ -3,10 +3,9 @@ import React, {  useEffect, useState, useRef, useMemo, Suspense, useCallback } f
 import { useTheme } from '@mui/material/styles';
 import Image from "next/image";
 import Footer from '../../components/footer';
-import DatePicker from "../../components/Flatpickr.js"
-import HotelCustomTypeahead from '../../components/HotelCustomTypehead';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import PhoneIcon from '@mui/icons-material/Phone';
+import HotelIcon from '@mui/icons-material/Hotel';
+import AppsIcon from '@mui/icons-material/Apps';
 import Typography from '@mui/material/Typography';
 import { useRouter,usePathname,useSearchParams  } from 'next/navigation'
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -21,7 +20,7 @@ import { Card, Form, Table, ButtonGroup, InputGroup,ListGroup, Input, Dropdown, 
 import { AppBar,Accordion,AccordionSummary,AccordionDetails, Tabs, Tab, Tab as MaterialTab, Tabs as MaterialTabs } from '@mui/material';
 import Pagination from '@mui/material/Pagination';
 import FormatNumberWithComma from '../../components/formatNumberWithComma';
-import { ConstructionOutlined } from '@mui/icons-material';
+import { ConstructionOutlined, RoundaboutLeftRounded } from '@mui/icons-material';
 import StarIcon from "@mui/icons-material/Star";
 import Modal from "../../components/Modal";
 import Slider from "react-slick";
@@ -30,13 +29,18 @@ import formatTime from '../../components/formatTime';
 import formatDate from '../../components/formatDate';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import RefundIcon from '@mui/icons-material/CheckCircleOutline';
+import NonRefundIcon from '@mui/icons-material/Warning';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import HotelImageSlider from "../../components/hotelImageSlider";
 
 
 const HotelDetails = () => {
 
     const pathname = usePathname(); // Get the current pathname
     const searchParams = useSearchParams();
-    const [collapseshow, setCollapseshow] = useState(false);
+    const [collapseshow, setCollapseShow] = useState(false);
     const router = useRouter();
     const params = useSearchParams();
     const [searchshow, setSearchshow] = useState(false);
@@ -52,30 +56,8 @@ const HotelDetails = () => {
     const [nav2, setNav2] = useState(null);
     const [adults, setAdults] = useState(params.get('adults') || 0);
     const [children, setChildren] = useState(params.get('children') || 0);
-    const [currentSlide, setCurrentSlide] = useState(0);
-
-    const slider1 = useRef(null);
-    const slider2 = useRef(null);
-
-    useEffect(() => {
-        setNav2(nav1);
-    }, [nav1]);
-
-      const settingsMain = {
-        asNavFor: nav2,
-        //arrows: true,
-        autoplay: true,
-        onReInit: () => setCurrentSlide(nav1?.innerSlider.state.currentSlide),
-      };
     
-      const settingsThumbs = {
-        asNavFor: nav1,
-        slidesToShow: 6,
-        swipeToSlide: true,
-        focusOnSelect: true,
-        swipeToSlide:true
-      };
-    
+  
 
     const payload = useMemo(() => {
 		const session = params.get('session');
@@ -97,9 +79,8 @@ const HotelDetails = () => {
            const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
            console.log(response.data);
            if(response.data.StatusCode){
-                setTimeout(() => {
-                    router.back();
-                }, 4000);
+              toast.error("Session has expired",{duration: 4000});
+              setTimeout(() => { router.back(); }, 4000);
            }else{
                 setHotelDetail(response.data);
                 setSessionId(response.data.SessionId);
@@ -120,47 +101,29 @@ const HotelDetails = () => {
 const addHotelToCart = async ({
   sessionId,
   roomId,
-  hotelCityCode,
-  hotelCode,
-  chainCode,
-  hotelCodeContext,
-  checkInDate,
-  checkOutDate,
   adults,
   children,
-  ratePlanCode,
-  bookingCode,
-  guaranteeType,
-  roomTypeCode,
-  roomRate,
   request_type
 }) => {
   // Construct the payload object
   const payload = {
     sessionId,
     roomId,
-    hotelCityCode,
-    hotelCode,
-    chainCode,
-    hotelCodeContext,
-    checkInDate,
-    checkOutDate,
     adults,
     children,
-    ratePlanCode,
-    bookingCode,
-    guaranteeType,
-    roomTypeCode,
-    roomRate,
     request_type
   };
 
   try {
     setIsLoading(true);
     // Send the POST request
-    console.log(payload);
+    //console.log(payload);
     const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`,payload);
-
+    if(response.data?.ShoppingCart){
+      router.push(`/hotel_cart?sessionid=${sessionId}&adults=${adults}&children=${children}`);
+    }else{
+      toast.error("Ooops, hotel could not be added to cart at the momemt",{duration: 4000});
+    }
     // Handle the response
     console.log("Response Data:", response.data);
 
@@ -215,32 +178,17 @@ const addHotelToCart = async ({
                         <div className="row">
                             <div className="col-md-6">
                                 {/* Main Carousel */}
-                                <Slider {...settingsMain} asNavFor={nav2} ref={(slider) => setNav1(slider)}>
-                                    {hoteldetails?.Hotels?.[0]?.HotelImages?.length > 0 && hoteldetails?.Hotels[0]?.HotelImages.map((src, index) => (
-                                    <div key={index}>
-                                        <Image src={src || "/assets/imgs/hotelimage.gif"} width={300} height={300} quality={100} priority alt={`Slide ${index}`} style={{ width: "100%" }} />
-                                    </div>
-                                    ))}
-                                </Slider>
-
-                                {/* Thumbnail Carousel */}
-                                <Slider {...settingsThumbs} asNavFor={nav1}>
-                                    {hoteldetails?.Hotels?.[0]?.HotelImages?.length > 0 && hoteldetails?.Hotels[0]?.HotelImages.map((src, index) => (
-                                    <div onClick={() => { nav1?.slickGoTo(index) }} key={index}>
-                                        <Image src={src || "/assets/imgs/hotelimage.gif"} width={100} height={100} quality={100} priority  alt={`Thumbnail ${index}`} style={{ width: "80px", height: "80px", objectFit: "cover" }} />
-                                    </div>
-                                    ))}
-                                </Slider>
+                                {hoteldetails && <HotelImageSlider hoteldetails={hoteldetails} />}
                             </div>
                             <div className='col-md-6'>
 
                                 <div className="card border-0 p-1">
-                                        <div className="card-header fw-bold mb-3">Hotel Info</div>
-                                        <h6 className='h6'>{hoteldetails?.Hotels?.[0]?.HotelName && hoteldetails?.Hotels?.[0]?.HotelName}</h6>
-                                        {hoteldetails?.Hotels?.[0]?.HotelDescription?.length > 0 &&
-                                            <ReadMoreLess text={hoteldetails?.Hotels[0]?.HotelDescription[0]} limit={250} />
-                                        } 
-                                    </div>
+                                    <div className="card-header fw-bold mb-3"><HotelIcon sx={{  marginRight: '8px' }} /> Hotel Info</div>
+                                    <h6 className='h6 fw-bold'>{hoteldetails?.Hotels?.[0]?.HotelName && hoteldetails?.Hotels?.[0]?.HotelName}</h6>
+                                    {hoteldetails?.Hotels?.[0]?.HotelDescription?.length > 0 &&
+                                        <ReadMoreLess text={hoteldetails?.Hotels[0]?.HotelDescription[0]} limit={250} />
+                                    } 
+                                </div>
                             
                             </div>
                             
@@ -248,7 +196,7 @@ const addHotelToCart = async ({
                         <div className="row">
                             <div className="col-md-6 py-2">
                                 <div className="card border-0 p-1">
-                                    <div className="card-header fw-bold mb-3">Contact details</div>
+                                    <div className="card-header fw-bold mb-3"><PhoneIcon sx={{  marginRight: '8px' }} /> Contact details</div>
                                     <ul className="list-group list-group-flush">
                                         <li className='list-group-item'><b className="fw-bold">Address</b> : {hoteldetails?.Hotels?.[0]?.HotelAddress && (
                                                         `${hoteldetails.Hotels[0].HotelAddress.StreetAddress}, ${hoteldetails.Hotels[0].HotelAddress.CityName}, ${hoteldetails.Hotels[0].HotelAddress.RegionName}, ${hoteldetails.Hotels[0].HotelAddress.ZIP}, ${hoteldetails.Hotels[0].HotelAddress.CountryCode }`
@@ -258,16 +206,41 @@ const addHotelToCart = async ({
                                     </div>
                             </div>
                             <div className='col-md-6'>
-
+                            <div className="box-collapse">
                                 <div className="card border-0">
-                                    <div className="card-header fw-bold">Hotel Amenities</div>
+                                    <div className="card-header fw-bold"><AppsIcon sx={{  marginRight: '8px' }} /> Hotel Amenities</div>
                                         <ul className="list-group list-group-flush">
-                                        {hoteldetails?.Hotels?.[0]?.HotelAmenitiesCollection?.length > 0 && hoteldetails?.Hotels[0]?.HotelAmenitiesCollection.map((p, key) => (
+                                        {hoteldetails?.Hotels?.[0]?.HotelAmenitiesCollection?.length > 0 && hoteldetails?.Hotels[0]?.HotelAmenitiesCollection.map((p, key) => {
+                                          if (key < 10) {
+                                            return (
                                             <React.Fragment key={key}>
-                                                <li className='list-group-item'>{p.Name}</li> 
+                                                {p.Name && <li className='list-group-item'>{p.Name}</li>}
                                             </React.Fragment>
-                                        ))}
-                                        </ul>
+                                          );
+                                        }
+                                        return null; // Return nothing if the item is not to be displayed
+                                      })}
+                                      
+                                              <Collapse in={collapseshow}>
+                                                <ul className="list-group list-group-flush">
+                                                  {hoteldetails?.Hotels?.[0]?.HotelAmenitiesCollection?.length > 0 &&
+                                                    hoteldetails?.Hotels[0]?.HotelAmenitiesCollection.map((p, key) => {
+                                                      if (key >= 10) {
+                                                        return (
+                                                          <React.Fragment key={key}>
+                                                            {p.Name && <li className="list-group-item">{p.Name}</li>}
+                                                          </React.Fragment>
+                                                        );
+                                                      }
+                                                      return null;
+                                                    })}
+                                               </ul>
+                                              </Collapse>
+                                              <div className="mx-auto" onClick={() => setCollapseShow(!collapseshow)}>{collapseshow ? <ExpandLessIcon /> : <ExpandMoreIcon />}</div>
+                                         
+                                      </ul>
+                                     
+                                </div>
                                 </div>
 
                             </div>
@@ -281,7 +254,7 @@ const addHotelToCart = async ({
                                         <div className="card">
                                             <div className="card-body">
                                                 <h6 className="card-title">{p.Category}</h6>
-                                                <h6 className="card-subtitle mb-2 text-muted">{p.CancelPenalty.AmountPercent.CurrencyCode}{FormatNumberWithComma(p.RoomRate)}</h6>
+                                                <h6 className="card-subtitle mb-2 text-muted">{p.CurrencyCode}{FormatNumberWithComma(p.RoomRate)}</h6>
                                                 <div className="card-text">
                                                 <ul>
                                                     {p?.RoomText?.length > 0 && p?.RoomText.map((m, key) => (  
@@ -296,50 +269,53 @@ const addHotelToCart = async ({
                                                 <li className="list-group-item">Amenities: Free Wi-Fi, AC, TV, Mini-bar</li>
                                                 <li className="list-group-item">Number of Beds: {p.NumberOfBeds}</li>
                                                 <li className="list-group-item">Number of Rooms: {p.NumberOfRooms}</li>
+
+                                                {p.CancelPenalty?.CancelPenaltyNotSpecified === false &&
+                                                
+                                                  <li className="list-group-item">
+                                                  <p>
+                                                      Cancellation Policy:{" "}
+                                                      {p.CancellationPenalties[0].Amount > 0 ? (
+                                                          <>
+                                                          Cancellation fee of {p.CancellationPenalties[0].CurrencyCode}
+                                                          {FormatNumberWithComma(p.CancellationPenalties[0].Amount)} if cancelled after{" "}
+                                                          {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)} (Local Time)
+                                                          </>
+                                                      ) : (
+                                                          <>
+                                                          No Cancellation fee if cancelled before{" "}
+                                                          {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)} (Local Time)
+                                                          </>
+                                                      )}
+                                                      </p>
+                                                  </li>
+                                                }
+
                                                 <li className="list-group-item">
-                                                <p>
-                                                    Cancellation Policy:{" "}
-                                                    {p.CancellationPenalties[0].Amount > 0 ? (
-                                                        <>
-                                                        Cancellation fee of {p.CancellationPenalties[0].CurrencyCode}
-                                                        {FormatNumberWithComma(p.CancellationPenalties[0].Amount)} if cancelled after{" "}
-                                                        {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)} (Local Time)
-                                                        </>
+                                                    {p.CancelPenalty?.CancelPenaltyNotSpecified === true ? (
+                                                      <>
+                                                        <NonRefundIcon style={{ verticalAlign: 'middle', marginRight: '8px' }} />
+                                                        Non-Refundable
+                                                      </>
                                                     ) : (
-                                                        <>
-                                                        No Cancellation fee if cancelled before{" "}
-                                                        {formatDate(p.CancellationPenalties[0].DeadlineDate)}, {formatTime(p.CancellationPenalties[0].DeadlineDate)} (Local Time)
-                                                        </>
+                                                      <>
+                                                        Refundable
+                                                        <RefundIcon style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
+                                                      </>
                                                     )}
-                                                    </p>
-                                                </li>
+                                                  </li>
+
                                                 </ul>
 
-                                                <button
+                                                <a
                                                     className="btn btn-gray mt-3 btn-sm"
                                                     onClick={() =>
-                                                        addHotelToCart({
-                                                        sessionId: sessionid,
-                                                        roomId: p.Id,
-                                                        hotelCityCode: hoteldetails?.Hotels[0].HotelCityCode,
-                                                        hotelCode: hoteldetails?.Hotels[0].HotelCode,
-                                                        chainCode: hoteldetails?.Hotels[0].ChainCode,
-                                                        hotelCodeContext: hoteldetails?.Hotels[0].HotelCodeContext,
-                                                        checkInDate: hoteldetails?.Hotels[0].CheckInDate,
-                                                        checkOutDate: hoteldetails?.Hotels[0].CheckOutDate,
-                                                        adults: adults,
-                                                        children: children,
-                                                        ratePlanCode: p.RatePlanCode,
-                                                        bookingCode: p.BookingCode,
-                                                        guaranteeType: p.GuaranteeType,
-                                                        roomTypeCode: p.RoomTypeCode,
-                                                        roomRate: p.RoomRate,
-                                                        request_type: "add_hotel_to_cart",
-                                                        })
+
+                                                        router.push(`/hotel_cart?sessionId=${sessionid}&roomId=${p.Id}&adults=${adults}&children=${children}`)
                                                     }
                                                     >
                                                     Book Now
-                                                    </button> 
+                                                    </a> 
                                                 </div>
                                         </div>
                                     </div>

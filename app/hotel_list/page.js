@@ -25,6 +25,7 @@ import { ConstructionOutlined } from '@mui/icons-material';
 import StarIcon from "@mui/icons-material/Star";
 import Modal from "../../components/Modal";
 import Link from 'next/link';
+import CustomImage from '../../components/customImageFetch.js'
 
 
 const HotelList = () => {
@@ -45,6 +46,7 @@ const HotelList = () => {
     const [maximumprice, setMaximumPrice] = useState(0);
     const [sessionid, setSessionId] = useState();
     const [pagination, setPagination] = useState();
+    const [filter, setFilter] = useState(params.get('sortby') || '');
 
 	  const [page, setPage] = React.useState(1);
 	  const [totalguests, setTotalGuests] = React.useState(0);
@@ -53,6 +55,24 @@ const HotelList = () => {
     const [roomsState, setRoomsState] = useState([]);
 
     const [formData, setFormData] = useState({});
+
+    const [selectedChain, setSelectedChain] = useState(() => {
+      const chain = params.get('chains');
+      if (chain) {
+        // If airlines is a string (single value), wrap it in an array; if it's already an array, return as is
+        return Array.isArray(chain) ? chain : [chain];
+      }
+      return [];
+    });
+
+    const [selectedAmenities, setSelectedAmenities] = useState(() => {
+      const amenities = params.get('amenities');
+      if (amenities) {
+        // If airlines is a string (single value), wrap it in an array; if it's already an array, return as is
+        return Array.isArray(amenities) ? amenities : [amenities];
+      }
+      return [];
+    });
 
     useEffect(() => {
 
@@ -79,7 +99,8 @@ const HotelList = () => {
       router.refresh(); // Reloads the page without a full browser reload
     };
 
-    console.log(roomsState);
+
+    console.log(amenities?.length);
 
      // Memoize formValues
     const formValues = useMemo(() => {
@@ -90,10 +111,13 @@ const HotelList = () => {
       }
 
       values.page = page;
+      values.chains = selectedChain;
+      values.amenities = selectedAmenities;
 
       return values;
+
     }, [searchParams,page]);
-    console.log(totalguests.adults);
+  
 
     useEffect(() => {
 
@@ -105,12 +129,16 @@ const HotelList = () => {
             `${process.env.NEXT_PUBLIC_HOST}/all_processes/`,
             formValues
           );
-          console.log(response.data);
+        if(response.data.status==0){
           setHotels(response.data.Hotels);
           setSessionId(response.data.SessionId);
           setPagination(response.data.PaginationData);
           setHotelChain(response.data.chainCode);
-          setAmenities(response.data.hotelAMenities);
+          setAmenities(response.data.hotelAmenities);
+        }else{
+          toast.error(response.data.message,{duration: 10000});
+        }
+          
         } catch (error) {
           console.error("Error fetching data", error);
         } finally {
@@ -119,7 +147,7 @@ const HotelList = () => {
       };
 
       fetchData();
-    }, [formValues,page]); // Use memoized values as dependency
+    }, [formValues,page,selectedChain,selectedAmenities]); // Use memoized values as dependency
 
     const fetchHoteldetails = (hotelid) => {
       try {
@@ -300,12 +328,108 @@ const HotelList = () => {
         );
       };
 
-      const handleChainCodeCheckboxChange = (item) => {
-        console.log(item);
-      }
+      console.log(selectedChain);
+
       const handleAmenitiesCheckboxChange = (item) => {
-        console.log(item);
+
+          // Determine the updated list of checked items
+          let updatedAmenitiesItems;
+          if (selectedAmenities.includes(item)) {
+            updatedAmenitiesItems = selectedAmenities.filter((i) => i !== item); // Remove the item
+          } else {
+            updatedAmenitiesItems = [...selectedAmenities, item]; // Add the item
+          }
+          
+          
+          // Update the state with the new checked items
+          setSelectedAmenities(updatedAmenitiesItems);
+
+          // Create a new URLSearchParams object using the existing params
+          const param = new URLSearchParams(params);
+
+          // Remove existing 'chains[]' entries to start fresh
+          param.delete('amenities');
+
+          // Add each item in updatedCheckedItems as separate 'airlines[]' entries
+          updatedAmenitiesItems.forEach((checkedItem) => {
+            param.append('amenities', checkedItem);
+          });
+
+          console.log(updatedAmenitiesItems);
+
+          // Construct the new URL string
+          const newUrl = `${pathname}?${param.toString()}`;
+
+          // Decode any encoded characters (like `+` back to space)
+          const decodedUrl = decodeURIComponent(newUrl);
+
+          // Update the URL without a page reload
+          router.push(decodedUrl);
+          
+          handleFilterClose();
+           
       }
+      
+      const handleChainCodeCheckboxChange = (item) => {
+         // Determine the updated list of checked items
+          let updatedChainItems;
+          if (selectedChain.includes(item)) {
+            updatedChainItems = selectedChain.filter((i) => i !== item); // Remove the item
+          } else {
+            updatedChainItems = [...selectedChain, item]; // Add the item
+          }
+          
+          
+          // Update the state with the new checked items
+          setSelectedChain(updatedChainItems);
+
+          // Create a new URLSearchParams object using the existing params
+          const param = new URLSearchParams(params);
+
+          // Remove existing 'chains[]' entries to start fresh
+          param.delete('chains');
+
+          // Add each item in updatedCheckedItems as separate 'airlines[]' entries
+          updatedChainItems.forEach((checkedItem) => {
+            param.append('chains', checkedItem);
+          });
+
+          console.log(updatedChainItems);
+
+          // Construct the new URL string
+          const newUrl = `${pathname}?${param.toString()}`;
+
+          // Decode any encoded characters (like `+` back to space)
+          const decodedUrl = decodeURIComponent(newUrl);
+
+          // Update the URL without a page reload
+          router.push(decodedUrl);
+          
+          handleFilterClose();
+      }
+      
+        const handleFilterChange = (event) => {
+            setFilter(event.target.value);
+            //console.log(event.target);
+            //const params = new URLSearchParams(searchParams);
+            const param = new URLSearchParams(params);
+            if(event.target.value !=""){
+              param.set('sortby', event.target.value);
+            }else{
+              param.delete('sortby');
+            }
+            
+            // Construct the new URL string
+            const newUrl = `${pathname}?${param.toString()}`;
+
+            // Decode any encoded characters (like `+` back to space)
+            const decodedUrl = decodeURIComponent(newUrl);
+
+            // Update the URL without a page reload
+            router.push(decodedUrl);
+            handleFilterClose();
+      
+        };
       
       
 
@@ -358,7 +482,7 @@ const HotelList = () => {
                                         fetchUrl="all_processes/"
                                         onCodeSelect={(code) => field.onChange(code)}
                                         error={errorsForm4.destination}
-                                        initialQuery={params.get('destination') || ""}
+                                        initialQuery={Hotels && Hotels[0]?.HotelCityCode}
                                         
                                         
                                         />
@@ -556,23 +680,16 @@ const HotelList = () => {
                         <div className="content-right">
                           <div className="box-grid-tours">
                             <div className="row">
-                            {Hotels && Hotels.map((d, k) => { 
+                            {Hotels && Hotels?.map((d, k) => { 
                               return (
 
                                 <div key={k} className="col-xl-4 col-lg-6 col-md-6">
                                 <div className="card-journey-small background-card"> 
                                   <div className="card-image"> 
                                     <a className="label" href="#"><HotelAwards awards={d.HotelAwards} /></a>
-                                    <Link href={`/hotel_detail?id=${d.Id}&session=${sessionid}&adults=${totalguests?.adults}&children=${totalguests?.children}`} >
-                                      <Image 
-                                        layout="intrinsic" 
-                                        alt="Hotel Image" 
-                                        width={200} 
-                                        height={200} 
-                                        quality={100} 
-                                        priority
-                                        src={d.HotelMainImage || "/assets/imgs/hotelimage.gif"}
-                                      />
+                                    <Link href={`/hotel_detail?id=${d.Id}&session=${sessionid}&adults=${totalguests?.adults}&children=${totalguests?.children}`}>
+                                    <Image src={d?.HotelMainImage || "/assets/imgs/hotelimage.gif"} alt="Hotel Image"  layout="intrinsic" width={200} height={200} quality={100} />
+                                    
                                       </Link>
                                   </div>
                                   <div className="card-info"> 
@@ -621,14 +738,11 @@ const HotelList = () => {
                          
                             <div className="mb-3">
                               <label>Sort resuts by</label>
-                              <select className="form-select form-control">
-                                <option value="">Sort by</option>
-                                <option value="cheapest first">Price (Cheapest first)</option>
-                                <option value="shortest first">Duration (Shortest first)</option>
-                                <option value="departure earliest">Departure Outbound (Earliest)</option>
-                                <option value="departure latest">Departure Outbound (Latest)</option>
-                                <option value="arrival earliest">Arrival Outbound (Earliest)</option>
-                                <option value="arrival latest">Arrival Outbound (Latest)</option>
+                              <select className="form-select form-control" value={filter} onChange={handleFilterChange}>
+                                  <option value="">Select Sort Option</option>
+                                  <option value="cheapest first">Price (Cheapest first)</option>
+                                  <option value="highest first">Price (Highest first)</option>
+                                  <option value="hotel name">Hotel Name</option>
                               </select>
                             </div>
 
@@ -706,7 +820,7 @@ const HotelList = () => {
                                         fetchUrl="all_processes/"
                                         onCodeSelect={(code) => field.onChange(code)}
                                         error={errorsForm4.destination}
-                                        initialQuery={params.get('destination') || ""}
+                                        initialQuery={Hotels && Hotels[0]?.HotelCityCode}
                                         
                                         
                                         />
@@ -897,11 +1011,11 @@ const HotelList = () => {
                           <Offcanvas.Body className="bg-light">
                               <div className="mb-3">
                                 <label>Sort results by</label>
-                                <select className="form-select form-control">
-                                  <option value="">Select Sort Option</option>
-                                  <option value="cheapest first">Price (Cheapest first)</option>
-                                  <option value="highest first">Price (Highest first)</option>
-                                  <option value="hotel name">Hotel Name</option>
+                                <select value={filter} onChange={handleFilterChange} className="form-select form-control">
+                                    <option value="">Select Sort Option</option>
+                                    <option value="cheapest first">Price (Cheapest first)</option>
+                                    <option value="highest first">Price (Highest first)</option>
+                                    <option value="hotel name">Hotel Name</option>
                                 </select>
                               </div>
 
@@ -914,7 +1028,7 @@ const HotelList = () => {
                                     return (
                                     <li key={index}>
                                       <label className="cb-container">
-                                      <input checked="" onChange={() => handleChainCodeCheckboxChange(item)} type="checkbox" value={item} />
+                                      <input checked={selectedChain.includes(item)} onChange={() => handleChainCodeCheckboxChange(item)} type="checkbox" value={item} />
                                       <span className="text-sm-medium">{item}</span>
                                       <span className="checkmark"></span>
                                       </label>
@@ -932,11 +1046,11 @@ const HotelList = () => {
                                 <ul className="list-filter-checkbox px-0">
                                   {amenities && amenities.map((item, index) => {
                                     // Determine if the current item is in the first 7 or should be in the collapse
-                                
+                                   
                                       return (
                                       <li key={index}>
                                         <label className="cb-container">
-                                        <input checked="" onChange={() => handleAmenitiesCheckboxChange(item)} type="checkbox" value={item} />
+                                        <input checked={selectedAmenities.includes(item)} onChange={() => handleAmenitiesCheckboxChange(item)} type="checkbox" value={item} />
                                         <span className="text-sm-medium">{item}</span>
                                         <span className="checkmark"></span>
                                         </label>
