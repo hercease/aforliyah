@@ -1046,12 +1046,12 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 			$hotels = array_values($hotels); // Re-index to ensure it becomes a proper array
 		}
 		
-		/*if (!empty($amenities)) {
+		if (!empty($amenities)) {
 			$hotels = array_filter($hotels, function ($var) use ($amenities) {
 				$hotelamenities = array_column($var['HotelAmenitiesCollection'] ?? [], 'Name');
 				return !empty(array_intersect($amenities, $hotelamenities));
 			});
-		}*/
+		}
 		
 		if ($sortby === 'cheapest first') {
 			usort($hotels, static function ($a, $b) {

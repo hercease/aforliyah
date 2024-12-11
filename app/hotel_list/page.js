@@ -116,7 +116,7 @@ const HotelList = () => {
 
       return values;
 
-    }, [searchParams,page]);
+    }, [searchParams,page,selectedChain,selectedAmenities]);
   
 
     useEffect(() => {
