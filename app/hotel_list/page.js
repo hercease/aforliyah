@@ -26,6 +26,7 @@ import StarIcon from "@mui/icons-material/Star";
 import Modal from "../../components/Modal";
 import Link from 'next/link';
 import CustomImage from '../../components/customImageFetch.js'
+import toast, { Toaster } from 'react-hot-toast';
 
 
 const HotelList = () => {
