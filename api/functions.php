@@ -40,7 +40,7 @@
 	}
 	}
 	
-	function sanitizeInput($data) {
+	function sanitizeInput($data){
 		$data = trim($data); // Remove unnecessary spaces
 		$data = stripslashes($data); // Remove backslashes
 		$data = htmlspecialchars($data); // Convert special characters to HTML entities
