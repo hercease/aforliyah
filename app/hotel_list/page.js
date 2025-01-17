@@ -127,7 +127,7 @@ const HotelList = () => {
       const fetchData = async () => {
         try {
           const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_HOST}/all_processes/`,
+            `${process.env.NEXT_PUBLIC_HOST}/`,
             formValues
           );
         if(response.data.status==0){
@@ -137,6 +137,7 @@ const HotelList = () => {
           setHotelChain(response.data.chainCode);
           setAmenities(response.data.hotelAmenities);
         }else{
+          console.log(response.data);
           toast.error(response.data.message,{duration: 10000});
         }
           
@@ -153,7 +154,7 @@ const HotelList = () => {
     const fetchHoteldetails = (hotelid) => {
       try {
         const response = axios.post(
-          `${process.env.NEXT_PUBLIC_HOST}/all_processes/`, { hotelid: hotelid, sessionid: sessionid, request_type: "hotel_details" }
+          `${process.env.NEXT_PUBLIC_HOST}/`, { hotelid: hotelid, sessionid: sessionid, request_type: "hotel_details" }
         );
       } catch (error) {
         

@@ -6090,7 +6090,7 @@ label {
   font-size: 16px;
   line-height: 26px;
   text-transform: capitalize;
-  font-weight: 700;
+  font-weight: 300;
   position: relative;
   display: inline-block;
   color: var(--bs-neutral-1000);

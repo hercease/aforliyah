@@ -915,7 +915,7 @@ export default function Home(){
 														placeholder="Destination"
 														name="destination"
 														icon="bx bxs-location-plus bx-sm"
-														fetchUrl="all_processes/"
+														fetchUrl="/"
 														onCodeSelect={(code) => field.onChange(code)}
 														error={errorsForm4.destination}
 														initialQuery=""

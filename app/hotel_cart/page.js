@@ -40,11 +40,14 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import dynamic from 'next/dynamic'
 const PaystackButton = dynamic(() => import('react-paystack').then(mod => mod.PaystackButton));
+import { parseCookies } from 'nookies';
+
 
 const HotelCart = () => {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname(); // Get the current pathname
+  const cookies = parseCookies();
 
   const [hoteldetails, setHotelDetail] = useState();
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +60,8 @@ const HotelCart = () => {
   const [bank, setBank] = useState();
   const [check, setCheck] = useState('');
 	const [bankcheck, setBankCheck] = useState('');
+  const [userCookie, setUserCookie] = useState(cookies.afotravelstoken || null);
+  const [userProfile, setuserProfile] = useState([]);
 	
 	const { register, watch, formState: { errors, isValid }, handleSubmit, reset, setValue, getValues } = useForm({mode: "onChange"});
 
@@ -102,7 +107,7 @@ const HotelCart = () => {
     setIsLoading(true);
    const fetchData = async () => {
      try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, payload);
         //console.log(response.data);
         if(response.data?.hotel?.ShoppingCart){
           setHotelDetail(response.data.hotel);
@@ -122,6 +127,29 @@ const HotelCart = () => {
    fetchData();
 }, [payload,router]);
 
+useEffect(() => {
+
+  const fetchProfile = async (value) => {
+    try {
+    const resp = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, { email : value, request_type : 'fetch_profile' });
+    
+    setuserProfile(resp.data);
+    console.log(resp);
+    
+    } catch (error) {
+    console.log("Error sending request");
+    } finally {
+    //console.info("It worked");
+    //setIsLoading(false);
+    }
+  };
+
+  if(userCookie){
+    fetchProfile(userCookie);
+  }
+  
+}, [userCookie]);
+
 // you can call this function anything
 const handlePaystackCloseAction = () => {
   // implementation for  whatever you want to do when the Paystack dialog closed.
@@ -132,6 +160,7 @@ const config = {
   reference: new Date().getTime().toString(),
   email: watch('email_0'), // Placeholder, will be dynamically set
   amount: watch('amount') * 100, // Placeholder, will be dynamically set
+  currency: 'USD', // Specify the currency
   publicKey: process.env.NEXT_PUBLIC_PAYSTACK_KEY
 };
 
@@ -147,7 +176,7 @@ const componentProps = {
 
   const handlePaystackSuccessAction = (reference) => {
       console.log("Payment successful:", reference);
-    axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`,{reference : reference['reference'], request_type:'check_payment' }).then(function(response){
+    axios.post(`${process.env.NEXT_PUBLIC_HOST}/`,{reference : reference['reference'], request_type:'check_payment' }).then(function(response){
       //console.log(response);
       if(response.data.status==1){
         //toast.success(response.data.message,{duration: 5000});
@@ -172,9 +201,10 @@ const componentProps = {
     const handleConfirmedSubmit = (data) => {
       // If the user confirms, proceed with form submission
         //console.log(data);
+        data.email =  userCookie;
       try {
         setIsLoading(true);
-        axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, data).then((response)=>{
+        axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, data).then((response)=>{
         //console.log(response.data);
         if(response.data.status==1){
           //toast.error(response.data.message,{duration: 8000});
@@ -410,7 +440,7 @@ const componentProps = {
                                             </div>
                                             <div className="mb-3">
                                               <label>First Name</label>
-                                              <input type="text"  {...register(`firstname_${index}`, { required: "Enter firstname"  })} className="form-control" placeholder="First Name" />
+                                              <input type="text"  {...register(`firstname_${index}`, { required: "Enter firstname"  })} defaultValue={userProfile[0]?.firstname} className="form-control" placeholder="First Name" />
                                               {errors[`firstname_${index}`] && (
                                                 <div className='text-danger mt-1'>
                                                 <ErrorOutlineRoundedIcon fontSize="small" />
@@ -420,7 +450,7 @@ const componentProps = {
                                             </div>
                                             <div className="mb-3">
                                               <label>Last Name</label>
-                                              <input type="text" {...register(`lastname_${index}`, { required: "Enter lastname"  })} className="form-control" placeholder="Last Name" />
+                                              <input type="text" {...register(`lastname_${index}`, { required: "Enter lastname"  })} defaultValue={userProfile[0]?.lastname} className="form-control" placeholder="Last Name" />
                                               {errors[`lastname_${index}`] && (
                                                 <div className='text-danger mt-1'>
                                                 <ErrorOutlineRoundedIcon fontSize="small" />
@@ -501,7 +531,7 @@ const componentProps = {
                                             <>
                                             <div className="mb-3">
                                               <label>Phone</label>
-                                              <input type="number" {...register(`phone_${index}`, { required: "Enter phone no"  })} className="form-control" placeholder="Mobile number" />
+                                              <input type="number" {...register(`phone_${index}`, { required: "Enter phone no"  })} className="form-control" placeholder="Mobile number without country code" />
                                               {errors[`phone_${index}`] && (
                                                 <div className='text-danger mt-1'>
                                                 <ErrorOutlineRoundedIcon fontSize="small" />

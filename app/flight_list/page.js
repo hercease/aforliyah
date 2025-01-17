@@ -347,7 +347,7 @@ const Flight = () => {
 		 setIsLoading(true);
 		const fetchData = async () => {
 		  try {
-			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
+			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, payload);
 			setFlightresults(response.data.flights);
 			setAllflightresults(response.data.allflights);
 			setFlightmatrix(response.data.all_matrix);
@@ -361,7 +361,7 @@ const Flight = () => {
 			setOnestop(response.data.onestop);
 			setTwostop(response.data.twostop);
 			setNonstop(response.data.nonstop);
-			//console.log(response.data);
+			console.log(response.data);
 			
 		  } catch (error) {
 			//console.error('Error sending request:', error);
@@ -618,7 +618,7 @@ const Flight = () => {
 		
 		setValueForm3('cabin1', cabin_form3);
 	}, [adults, child, infants, setValueForm1, setValueForm2, formType, params, date, setValueForm3]);
-	
+	console.log(flightresults);
 	return (
 
 	<>
@@ -1436,7 +1436,7 @@ const Flight = () => {
 					<div className="block-filter">
 						<div className="d-flex justify-content-between border-bottom align-items-center mb-3">
 							<h6 className="text-lg-bold item-collapse neutral-1000">Airlines</h6>
-							<p className="neutral-1000 mb-0">{flightairlines && flightairlines.reduce((total, airline) => total + airline.count, 0)}</p>
+							<p className="neutral-1000 mb-0"></p>
 						</div>
 						<div className="box-collapse scrollFilter">
 							<ul className="list-filter-checkbox px-0">
@@ -1450,7 +1450,7 @@ const Flight = () => {
 										<span className="text-sm-medium">{item.name}</span>
 										<span className="checkmark"></span>
 									  </label>
-									  <span className="number-item">{item.count}</span>
+									  <span className="number-item"></span>
 									</li>
 								  );
 								}
@@ -1468,7 +1468,7 @@ const Flight = () => {
 														<span className="text-sm-medium">{item.name}</span>
 														<span className="checkmark"></span>
 													</label>
-												<span className="number-item">{item.count}</span>
+												<span className="number-item"></span>
 											</li>
 											  );
 										}
@@ -2110,7 +2110,7 @@ const Flight = () => {
 					<div className="block-filter">
 						<div className="d-flex justify-content-between border-bottom align-items-center mb-3">
 							<h6 className="text-lg-bold item-collapse neutral-1000">Airlines</h6>
-							<p className="neutral-1000 mb-0">{flightairlines && flightairlines.reduce((total, airline) => total + airline.count, 0)}</p>
+							<p className="neutral-1000 mb-0"></p>
 						</div>
 						<div className="box-collapse scrollFilter">
 							<ul className="list-filter-checkbox px-0">
@@ -2124,7 +2124,7 @@ const Flight = () => {
 										<span className="text-sm-medium">{item.name}</span>
 										<span className="checkmark"></span>
 									  </label>
-									  <span className="number-item">{item.count}</span>
+									  <span className="number-item"></span>
 									</li>
 								  );
 								}
@@ -2339,7 +2339,7 @@ const Flight = () => {
 													<div className="me-lg-2 ms-lg-auto"><FlightDetail flightId={data.Id} flightsession={flightsession} adult={adults} numchildren={child} infant={infants} />
 													</div>
 													<div className="">
-														<Button onClick={() => handleClick(data.originalIndex)} size="small" variant="contained">Flight details</Button>
+														<Button onClick={() => handleClick(data.originalIndex)} size="small" variant="contained">Details</Button>
 													</div>
 											</div>
 										</div>

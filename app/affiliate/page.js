@@ -18,15 +18,15 @@ export default function Affiliate(){
 			<main style={{ background: "var(--bs-gray-100)" }} className="main">
 			
 				<section className="box-section box-breadcrumb background-100">
-						<div className="container"> 
-						  <ul className="breadcrumbs"> 
-							<li> <a href="/">Home</a><span className="arrow-right"> 
-								<svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-								  <path d="M1 11L6 6L1 1" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-								</svg></span></li>
-							<li> <span className="text-breadcrumb">Become an Affiliate</span></li>
-						  </ul>
-						</div>
+					<div className="container"> 
+						<ul className="breadcrumbs"> 
+						<li> <a href="/">Home</a><span className="arrow-right"> 
+							<svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M1 11L6 6L1 1" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+							</svg></span></li>
+						<li> <span className="text-breadcrumb">Become an Affiliate</span></li>
+						</ul>
+					</div>
 				</section>
 				
 				<div className="container py-3">

@@ -16,24 +16,29 @@ import formatDate from '../../components/formatDate';
 import extractWord from '../../components/Extractword';
 import FormatNumberWithComma from '../../components/formatNumberWithComma';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 import toast, { Toaster } from 'react-hot-toast';
 //import { PaystackButton } from 'react-paystack';
 //import { usePaystackPayment } from 'react-paystack';
 //import Paystack from '@paystack/inline-js';
 import dynamic from 'next/dynamic'
 const PaystackButton = dynamic(() => import('react-paystack').then(mod => mod.PaystackButton));
+import { parseCookies } from 'nookies';
 
 const FlightDetail = () => {
 	const params = useSearchParams();
 	const pathname = usePathname(); // Get the current pathname
-	 const router = useRouter();
-		const goBack = () => {
-			if (window.history.length > 1) {
-				router.back();
-			} else {
-				router.push('/'); // Replace with your fallback route
-			}
-		};
+	const cookies = parseCookies();
+	const router = useRouter();
+
+	const goBack = () => {
+		if (window.history.length > 1) {
+			router.back();
+		} else {
+			router.push('/'); // Replace with your fallback route
+		}
+	};
 	
 	const [isLoading, setIsLoading] = useState(false);
 	const [air, setAir] = useState();
@@ -41,6 +46,8 @@ const FlightDetail = () => {
 	const [bank, setBank] = useState();
 	const [alldata, setAlldata] = useState();
 	const [isModalVisible, setModalVisible] = useState(true);
+	const [userCookie, setUserCookie] = useState(cookies.afotravelstoken || null);
+	const [userProfile, setuserProfile] = useState([]);
 		
 	const payload = useMemo(() => {
 		const session = params.get('session');
@@ -65,7 +72,7 @@ const FlightDetail = () => {
 		 setIsLoading(true);
 		const fetchData = async () => {
 		  try {
-			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
+			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, payload);
 			if(response.data.status==0){
 				setAir(response.data.air);
 				setAllresponse(response.data.allresponse);
@@ -89,6 +96,29 @@ const FlightDetail = () => {
 
 		fetchData();
 	}, [payload,router]);
+
+	useEffect(() => {
+
+		const fetchProfile = async (value) => {
+		  try {
+			const resp = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, { email : value, request_type : 'fetch_profile' });
+			
+			setuserProfile(resp.data);
+			console.log(resp);
+			
+		  } catch (error) {
+			console.log("Error sending request");
+		  } finally {
+			//console.info("It worked");
+			//setIsLoading(false);
+		  }
+		};
+
+		if(userCookie){
+			fetchProfile(userCookie);
+		}
+		
+	}, [userCookie]);
 	
 	const countair = air && air.length - 1;
 	const count_segment = air && air[countair]?.FlightSegments.length;
@@ -151,7 +181,7 @@ const FlightDetail = () => {
 	
 	const handlePaystackSuccessAction = (reference) => {
       console.log("Payment successful:", reference);
-		axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`,{reference : reference['reference'], request_type:'check_payment' }).then(function(response){
+		axios.post(`${process.env.NEXT_PUBLIC_HOST}/`,{reference : reference['reference'], request_type:'check_payment' }).then(function(response){
 			//console.log(response);
 			if(response.data.status==1){
 				//toast.success(response.data.message,{duration: 5000});
@@ -210,10 +240,11 @@ const FlightDetail = () => {
 			//setModalVisible(false);
 			//const data = getValues('formData');
 			data.flight = air;
+			data.email =  userCookie;
 			console.log(data);
 		try {
 			setIsLoading(true);
-			axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, data).then((response)=>{
+			axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, data).then((response)=>{
 			//console.log(response.data);
 			if(response.data.status==1){
 				//toast.error(response.data.message,{duration: 8000});
@@ -476,7 +507,7 @@ const FlightDetail = () => {
 					</div>
 					<div className="mb-3">
 						<label>First Name</label>
-						<input type="text"  {...register(`adult_firstname_${formfield.id}`, { required: "Enter firstname"  })} className="form-control" placeholder="First Name" />
+						<input type="text"  {...register(`adult_firstname_${formfield.id}`, { required: "Enter firstname"  })} defaultValue={userProfile[0]?.firstname} className="form-control" placeholder="First Name" />
 						{errors[`adult_firstname_${formfield.id}`] && (
 						  <div className='text-danger mt-1'>
 							<ErrorOutlineRoundedIcon fontSize="small" />
@@ -486,7 +517,7 @@ const FlightDetail = () => {
 					</div>
 					<div className="mb-3">
 						<label>Last Name</label>
-						<input type="text" {...register(`adult_lastname_${formfield.id}`, { required: "Enter lastname"  })} className="form-control" placeholder="Last Name" />
+						<input type="text" {...register(`adult_lastname_${formfield.id}`, { required: "Enter lastname"  })} defaultValue={userProfile[0]?.lastname} className="form-control" placeholder="Last Name" />
 						{errors[`adult_lastname_${formfield.id}`] && (
 						  <div className='text-danger mt-1'>
 							<ErrorOutlineRoundedIcon fontSize="small" />
@@ -533,7 +564,7 @@ const FlightDetail = () => {
 					</div>
 					<div className="mb-3">
 						<label>Phone</label>
-						<input type="number" {...register(`adult_phone_${formfield.id}`, { required: "Enter phone no"  })} className="form-control" placeholder="Mobile number" />
+						<input type="number" {...register(`adult_phone_${formfield.id}`, { required: "Enter phone no"  })} className="form-control" placeholder="Mobile number without country code" />
 						{errors[`adult_phone_${formfield.id}`] && (
 						  <div className='text-danger mt-1'>
 							<ErrorOutlineRoundedIcon fontSize="small" />

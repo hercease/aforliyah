@@ -117,17 +117,18 @@ export const viewport = "width=device-width, initial-scale=1.0";
 
 export default function RootLayout({ children }) {
   return (
+
     <html lang="en" className="body">
       <body>
-		<Header />
-		{children}
-		<Toaster />
-		<BackToTop target="top" />
+        <Header />
+          {children}
+        <Toaster />
+        <BackToTop target="top" />
   
-{/* Tidio Script */}
-<script src="//code.tidio.co/9r3slb1vdcat4waxwdk6embqcuvjsaag.js" async />
- {/* Google Analytics */}
- <Script
+        {/* Tidio Script */}
+          <script src="//code.tidio.co/9r3slb1vdcat4waxwdk6embqcuvjsaag.js" async />
+        {/* Google Analytics */}
+        <Script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-F60CCNKWLV"
         />
@@ -146,8 +147,8 @@ export default function RootLayout({ children }) {
         />
 
 
-		<Script id="demo-min" src="/assets/js/vendor/jquery-3.7.1.min.js"></Script>
-		<Script id="main-js" src="/assets/js/vendor/bootstrap.bundle.min.js"></Script>
+        <Script id="demo-min" src="/assets/js/vendor/jquery-3.7.1.min.js"></Script>
+        <Script id="main-js" src="/assets/js/vendor/bootstrap.bundle.min.js"></Script>
 	  </body>
     </html>
   );

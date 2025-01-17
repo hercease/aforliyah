@@ -118,7 +118,7 @@ const addHotelToCart = async ({
     setIsLoading(true);
     // Send the POST request
     //console.log(payload);
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`,payload);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`,payload);
     if(response.data?.ShoppingCart){
       router.push(`/hotel_cart?sessionid=${sessionId}&adults=${adults}&children=${children}`);
     }else{
@@ -254,12 +254,12 @@ const addHotelToCart = async ({
                                         <div className="card">
                                             <div className="card-body">
                                                 <h6 className="card-title">{p.Category}</h6>
-                                                <h6 className="card-subtitle mb-2 text-muted">{p.CurrencyCode}{FormatNumberWithComma(p.RoomRate)}</h6>
+                                                <h6 className="card-subtitle mb-2 text-muted">{hoteldetails?.Hotels?.[0]?.CurrencyCode}{FormatNumberWithComma(p.RoomRate)}</h6>
                                                 <div className="card-text">
-                                                <ul>
+                                                <ul className="list-group">
                                                     {p?.RoomText?.length > 0 && p?.RoomText.map((m, key) => (  
                                                         <React.Fragment key={key}>
-                                                            <li>{m}</li> 
+                                                            <li className="list-group-item">{m}</li> 
                                                         </React.Fragment>
                                                     ))}
                                                 </ul>   

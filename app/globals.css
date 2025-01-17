@@ -135,3 +135,22 @@ border-bottom: solid;
     font-size: 0.8rem;
 }
 
+.react-international-phone-input-container{
+  display:flex; 
+  width: 100%;
+}
+
+.react-international-phone-input-container .react-international-phone-country-selector-button{
+  height: 50px;
+  width: 50px
+}
+
+.react-international-phone-input-container .react-international-phone-input{
+  height: 50px !important;
+ 
+}
+
+.dropdown .dropdown-menu.show .dropdown-item {
+  padding: 0px 0px !important;   
+}
+

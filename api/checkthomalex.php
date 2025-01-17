@@ -21,7 +21,7 @@
 	if($thomalex_token == '' || strtotime($date1) >= strtotime($thomalex_date)){
 			
 		$api = generateApi($url);
-		//print_r($api);
+		print_r($api);
 		
 		if($count_rows==0){
 			$stmt = $conn->prepare("INSERT IGNORE INTO thomalex (token, date) VALUES (?, ?)");

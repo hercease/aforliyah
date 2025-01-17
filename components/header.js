@@ -7,10 +7,16 @@ import CurrencyDropdown from "../components/CurrencyDropdown.js"
 import MobileMenu from "../components/MobileMenu.js"
 import ThemeSwitch from "../components/ThemeSwitch.js"
 import Dropdown from 'react-bootstrap/Dropdown'
+import axios from "axios";
+import { parseCookies, setCookie, destroyCookie } from 'nookies';
 
 export default function Header(){ 
 	const router = useRouter();
 	const [isMobileMenu, setMobileMenu] = useState(false);
+	const cookies = parseCookies();
+	const [userCookie, setUserCookie] = useState(null);
+	const [userProfile, setuserProfile] = useState([]);
+
 
 	const handleMobileMenu = () => {
 	  setMobileMenu(!isMobileMenu);
@@ -20,7 +26,9 @@ export default function Header(){
 		document.body.classList.remove("mobile-menu-active");
 	  }
 	};
+
 	const [scroll, setScroll] = useState(false);
+
 	useEffect(() => {
 	  const WOW = require('wowjs');
 	  window.wow = new WOW.WOW({
@@ -50,13 +58,47 @@ export default function Header(){
 		//console.log("Page has changed");
 		document.body.classList.remove("mobile-menu-active");
 		 setMobileMenu(false);
-	}, [pathname])
+	}, [pathname]);
+
+	useEffect(() => {
+		// Example: Retrieve the cookie value client-side
+		const cookieValue = cookies.afotravelstoken;
+		setUserCookie(cookieValue);
+	  }, []);
+	
+
+	useEffect(() => {
+		const fetchData = async (value) => {
+		  try {
+			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, { email : value, request_type : 'fetch_profile' });
+			
+			setuserProfile(response.data);
+			console.log(response.data);
+			
+		  } catch (error) {
+			console.log("Error sending request");
+		  } finally {
+			//console.info("It worked");
+			//setIsLoading(false);
+		  }
+		};
+
+		if(userCookie){
+			fetchData(userCookie);
+		}
+		
+	}, [userCookie]);
+
+	function Logout(){
+		destroyCookie(null, 'afotravelstoken'); router.push('/login');
+	}
 
 	return (
 	<>	
 			{isMobileMenu &&
 				<div className="body-overlay-1" onClick={handleMobileMenu} />
 			}
+			
 			<header className="header sticky-bar background-body">
 				<div className="container mx-auto background-body">
 					<div className="main-header">
@@ -88,9 +130,9 @@ export default function Header(){
 						<div className="header-nav">
 						  <nav className="nav-main-menu">
 							<ul style={{ marginBottom : "0em" }} className="main-menu">
-							  <li><Link className="active" href="/">Home</Link></li>
-							  <li><Link href="/affiliate">Become an Affiliate</Link></li>
-							  <li><Link href="/contact">Contact us</Link></li>
+							  <li><Link className={pathname == "/" ? "active" : ""} href="/">Home</Link></li>
+							  <li><Link className={pathname == "/affiliate" ? "active" : ""} href="/affiliate">Become an Affiliate</Link></li>
+							  <li><Link className={pathname == "/contact" ? "active" : ""}  href="/contact">Contact us</Link></li>
 							</ul>
 						  </nav>
 						</div>
@@ -106,14 +148,46 @@ export default function Header(){
 								</ul>
 							</Dropdown.Menu>
 						</Dropdown>
-						<CurrencyDropdown />
-						<div className="d-none d-lg-block align-middle mr-15">
-						  <ThemeSwitch />
-						  <Link className="btn btn-secondary btn-signin" href="#">Sign In</Link>
-						</div>
-						<div className="burger-icon-2 burger-icon-white">
+							<CurrencyDropdown />
+							<div className="d-none d-lg-block align-middle mr-15">
+								<ThemeSwitch />
+								{!userCookie && (
+									<Link className="btn btn-secondary btn-signin" href="/login">
+									Sign In
+									</Link>
+								)}
+							</div>
 							
-						</div>
+							{userCookie && (
+								<div className="d-none d-lg-block align-middle mr-15">
+									<div className="dropdown">
+										<div
+											className="rounded-circle text-white d-flex justify-content-center align-items-center dropdown-toggle"
+											style={{
+												width: "50px",
+												height: "50px",
+												backgroundColor: "#007bff",
+												fontSize: "15px",
+												fontWeight: "bold",
+											}}
+											
+											data-bs-toggle="dropdown"
+											aria-expanded="false"
+											id="dropdownMenuButton"
+										>
+											{userProfile[0]?.firstname?.charAt(0)}{userProfile[0]?.lastname?.charAt(0)}
+										</div>
+										<ul className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+											<li><a className="dropdown-item" onClick={() => router.push('/profile')}>Profile</a></li>
+											<li><a className="dropdown-item" onClick={() => router.push('/mybookings')}>Bookings</a></li>
+											<li><hr className="dropdown-divider" /></li>
+											<li><a className="dropdown-item" onClick={Logout}>Logout</a></li>
+										</ul>
+									</div>
+								</div>
+								)
+							}
+
 						<div onClick={handleMobileMenu} className="burger-icon burger-icon-white">
 							<span className="burger-icon-top"></span>
 							<span className="burger-icon-mid"></span>
@@ -123,7 +197,7 @@ export default function Header(){
 					</div>
 				</div>
 			</header>
-			<MobileMenu isMobileMenu={isMobileMenu} handleMobileMenu={handleMobileMenu} />
+			<MobileMenu isMobileMenu={isMobileMenu} handleMobileMenu={handleMobileMenu} userdetails={userProfile} />
 			
 
 <style>{`

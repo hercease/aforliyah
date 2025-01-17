@@ -49,9 +49,6 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 		$search_url = $website_url.'air/search?'.''. $build_query .'';
 		$resp = curlwithHeader($search_url,$api_key);
 
-		$search_url = $website_url.'air/search?'.''. $build_query .'';
-		$resp = curlwithHeader($search_url,$api_key);
-
 		if(!empty($resp) && is_array($resp)){
 
 			$totalmatrix = count($resp['Matrix']['DirectAirlines'] ?? []) + count($resp['Matrix']['TwoStopsAirlines'] ?? []) + count($resp['Matrix']['OneStopAirlines'] ?? []);
@@ -83,6 +80,7 @@ if($_SERVER['REQUEST_METHOD'] == "POST"){
 				$a['originalIndex'] = $k;
 				$allArtinery[] = $a;
 				$completeArtinery[] = $a;
+				
 				foreach($a['AirItinerary']['OriginDestinationOptions'] as $c){
 					foreach($c['FlightSegments'] as $key => $d){
 						$airlineName = $d['MarketingAirlineName'];

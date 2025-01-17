@@ -23,7 +23,7 @@ const HotelCustomeTypeAhead = ({
     const [initialQueryUsed, setInitialQueryUsed] = useState(false);
   
     const fetchData = useCallback((query) => {
-      fetch(`${process.env.NEXT_PUBLIC_HOST}/${fetchUrl}`,{
+      fetch(`${process.env.NEXT_PUBLIC_HOST}/`,{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
