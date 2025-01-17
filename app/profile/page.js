@@ -30,9 +30,9 @@ export default function Register(){
         setShowPassword(!showPassword);
     };
     
-    const { register, watch, formState: { errors }, handleSubmit, reset, setValue, getValues, control } = useForm({
-        mode: "onChange" });
-    const { register: registerForm1, handleSubmit: handleSubmitForm1, formState: { errors: errorsForm1 }, setValue: setValueForm1, control: controlForm1 } = useForm();
+
+    const { register: registerForm1, handleSubmit: handleSubmitForm1, formState: { errors: errorsForm1 }, setValue: setValueForm1, control: controlForm1, watch: watchForm1 } = useForm();
+    const { register: registerForm2, handleSubmit: handleSubmitForm2, formState: { errors: errorsForm2 }, setValue: setValueForm2, control: controlForm2, watch: watchForm2, getValues: getValuesForm2 } = useForm();
 
     const [activeTab, setActiveTab] = useState('profile');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -54,8 +54,8 @@ export default function Register(){
 
     const onSubmit = (data) => {
 		
-        setValue('formData', data);
-console.log(data);
+        setValueForm1('formData', data);
+//console.log(data);
         // Display the confirmation modal
         setModalVisible(true);
     }
@@ -223,21 +223,23 @@ console.log(data);
                             <div className="tab-pane fade show active">
                                 <div className="card">
                                     <div className="card-body">
-                                    <form onSubmit={handleSubmit(onSubmit)}>
+                                    <form onSubmit={handleSubmitForm1(onSubmit)}>
                                         <div className="mb-3">
                                             <label>First Name</label>
-                                            <input type="text" {...register("firstname", { required: "Firstname can not be empty"  })} className="form-control form-control-sm" placeholder="Enter first name" defaultValue={userProfile[0]?.firstname} />
+                                            <input type="text" {...registerForm1("firstname", { required: "Firstname can not be empty"  })} className="form-control form-control-sm" placeholder="Enter first name" defaultValue={userProfile[0]?.firstname} />
+                                            {errorsForm1.firstname  && <div className='text-danger mt-1'><i className="bx bx-error-alt"></i> {errorsForm1.firstname.message} </div>}
                                         </div>
                                         <div className="mb-3">
                                             <label>Last Name</label>
-                                            <input type="text" {...register("lastname", { required: "Lastname can not be empty"  })} className="form-control" placeholder="Enter last name" defaultValue={userProfile[0]?.lastname} />
+                                            <input type="text" {...registerForm1("lastname", { required: "Lastname can not be empty"  })} className="form-control" placeholder="Enter last name" defaultValue={userProfile[0]?.lastname} />
+                                            {errorsForm1.lastname  && <div className='text-danger mt-1'><i className="bx bx-error-alt"></i> {errorsForm1.lastname.message} </div>}
                                         </div>
                                         <div className="mb-3">
                                             <label>Phone number</label>
                                             <div className="input-group">
                                                 <Controller
                                                 name="phoneNumber"
-                                                control={control}
+                                                control={controlForm1}
                                                 defaultValue={userProfile[0]?.phone}
                                                 rules={{
                                                     required: 'Phone number is required',
@@ -256,9 +258,9 @@ console.log(data);
                                                 )}
                                                 />
                                             </div>
-                                            {errors.phoneNumber  && <div className='text-danger mt-1'><i className="bx bx-error-alt"></i> {errors.phoneNumber.message} </div>}
+                                            {errorsForm1.phoneNumber  && <div className='text-danger mt-1'><i className="bx bx-error-alt"></i> {errorsForm1.phoneNumber.message} </div>}
                                         </div>
-                                        <input type="hidden" {...register("request_type")} value="update_profile" />
+                                        <input type="hidden" {...registerForm1("request_type")} value="update_profile" />
                                         <div className='mb-3'>
                                             <Button disabled={disable_status} type="submit" fullWidth variant="contained">{sub_status}</Button>
                                         </div>
@@ -274,7 +276,7 @@ console.log(data);
                             <div className="tab-pane fade show active">
                                 <div className="card">
                                     <div className="card-body">
-                                    <form onSubmit={handleSubmit(onHandleSubmit)}>
+                                    <form onSubmit={handleSubmitForm2(onHandleSubmit)}>
                                         <div className="mb-3">
                                             <label htmlFor="currentPassword" className="form-label">
                                             Current Password
@@ -284,9 +286,9 @@ console.log(data);
                                             className="form-control"
                                             id="currentPassword"
                                             placeholder="Enter current password"
-                                            {...register("old_password", { required: "Enter your current password"  })}
+                                            {...registerForm2("old_password", { required: "Enter your current password"  })}
                                             />
-                                            {errors.old_password  && <div className='text-danger'><ErrorOutlineRoundedIcon /> {errors.old_password.message} </div>}
+                                            {errorsForm2.old_password  && <div className='text-danger'><ErrorOutlineRoundedIcon /> {errorsForm2.old_password.message} </div>}
                                         </div>
                                         <div className="mb-3">
                                             <label htmlFor="newPassword" className="form-label">
@@ -297,9 +299,9 @@ console.log(data);
                                                 className="form-control"
                                                 id="newPassword"
                                                 placeholder="Enter new password"
-                                                {...register("new_password", { required: "Enter your new password"  })}
+                                                {...registerForm2("new_password", { required: "Enter your new password"  })}
                                             />
-                                            {errors.new_password  && <div className='text-danger'><ErrorOutlineRoundedIcon /> {errors.new_password.message} </div>}
+                                            {errorsForm2.new_password  && <div className='text-danger'><ErrorOutlineRoundedIcon /> {errorsForm2.new_password.message} </div>}
                                         </div>
                                         <div className="mb-3">
                                             <label htmlFor="confirmPassword" className="form-label">
@@ -310,11 +312,11 @@ console.log(data);
                                                 className="form-control"
                                                 id="confirmPassword"
                                                 placeholder="Confirm new password"
-                                                {...register("repeat_password", { required: "Confirm new password!", validate: { matchesPreviousPassword: (value) => { const { new_password } = getValues(); return new_password === value || "Password confirmation does not match"; }} })}
+                                                {...registerForm2("repeat_password", { required: "Confirm new password!", validate: { matchesPreviousPassword: (value) => { const { new_password } = getValuesForm2(); return new_password === value || "Password confirmation does not match"; }} })}
                                             />
-                                            {errors.repeat_password  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon /> {errors.repeat_password.message} </div>}
+                                            {errorsForm2.repeat_password  && <div className='text-danger mt-1'><ErrorOutlineRoundedIcon /> {errorsForm2.repeat_password.message} </div>}
                                         </div>
-                                        <input type="hidden" {...register("request_type")} value="change_password" />
+                                        <input type="hidden" {...registerForm2("request_type")} value="change_password" />
                                         <Button disabled={disable_status} type="submit" fullWidth variant="contained">{sub_status}</Button>
                                 </form>
                             </div>
@@ -332,7 +334,7 @@ console.log(data);
                             <p className="mb-0">Are you sure you want to continue?</p>
                         </div>
                         <div className="modal-footer flex-nowrap p-0">
-                            <button onClick={() => handleConfirmedSubmit(watch())} type="button" className="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end"><strong>Yes</strong></button>
+                            <button onClick={() => handleConfirmedSubmit(watchForm1())} type="button" className="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end"><strong>Yes</strong></button>
                             <button onClick={hideModal} type="button" className="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0" data-bs-dismiss="modal">No</button>
                         </div>
                         </div>

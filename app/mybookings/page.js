@@ -38,6 +38,7 @@ export default function Mybookings(){
     const [phoneNumber, setPhoneNumber] = useState('');
     const [userCookie, setUserCookie] = useState(cookies.afotravelstoken || null);
     const [tableData, setTableData] = useState([]);
+    const [tableData2, setTableData2] = useState([]);
     const [state, setState] = useState({ sub_status: 'Continue', disable_status: '' });
          
     const { disable_status, sub_status } = state;
@@ -77,7 +78,7 @@ export default function Mybookings(){
 	}, [userCookie,router]);
 
     const columns = [
-        { field: 'id', headerName: 'S/N', width: 90 },
+        { field: 'id', headerName: 'S/N', width: 120 },
         { field: 'firstname', headerName: 'Firstname', width: 150 },
         { field: 'lastname', headerName: 'Lastname', width: 150 },
         { field: 'phone', headerName: 'Phone', width: 150 },
@@ -129,7 +130,7 @@ export default function Mybookings(){
 								initialState={{
 									pagination: {
 										paginationModel: {
-										pageSize: 5,
+											pageSize: 5,
 										},
 									},
 								}}
