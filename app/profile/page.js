@@ -149,8 +149,8 @@ console.log(data);
             router.push('/login');
         }
 		
-	}, [userCookie]);
-console.log(userProfile);
+	}, [userCookie,router]);
+//console.log(userProfile);
 	return (
 		<>
 		

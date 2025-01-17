@@ -64,7 +64,7 @@ export default function Header(){
 		// Example: Retrieve the cookie value client-side
 		const cookieValue = cookies.afotravelstoken;
 		setUserCookie(cookieValue);
-	  }, []);
+	  }, [cookies]);
 	
 
 	useEffect(() => {

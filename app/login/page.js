@@ -117,7 +117,7 @@ export default function Login(){
                                     </div>
 								</form>
                                     <p className="text-sm-medium neutral-500">
-                                        Don't have an account?{' '}
+                                        {`Don't`} have an account?{' '}
                                         <Link className="neutral-1000 btn-signup" href="/register">
                                             Register Here !
                                         </Link>

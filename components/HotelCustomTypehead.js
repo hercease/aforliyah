@@ -60,7 +60,7 @@ const HotelCustomeTypeAhead = ({
           }
   
         });
-      }, [fetchUrl, initialQueryUsed, initialQuery, onCodeSelect]);
+      }, [initialQueryUsed, initialQuery, onCodeSelect]);
   
     useEffect(() => {
       if (initialQuery && !initialQueryUsed){
