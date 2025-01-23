@@ -56,7 +56,7 @@ const BookingConfirmation = () => {
 		const fetchData = async () => {
 		  try {
 			  
-				const response  = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/all_processes/`, payload);
+				const response  = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, payload);
 				console.log(response.data);
 				if(response.data.status==1){
 					setPnr(response.data.pnr);

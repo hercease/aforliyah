@@ -850,7 +850,7 @@ const FlightDetail = () => {
 						  <input 
 							className="form-check-input" 
 							type="radio" 
-							value={d.bank_name} // Use dynamic value
+							value={d.id} // Use dynamic value
 							{...register("bank", { required: "Select bank" })} 
 							id={`flexbank${k}`} // Use unique ID for each bank
 							onChange={e => handlebankChange(e)} 
