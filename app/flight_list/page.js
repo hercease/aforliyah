@@ -2370,6 +2370,7 @@ const Flight = () => {
 			</main>
 			
 			<div className="bg-footer"></div>
+			
 			 <Footer />
 		</Layout>
 	</AnimatePresence>

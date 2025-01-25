@@ -50,6 +50,7 @@ const HotelCart = () => {
   const cookies = parseCookies();
 
   const [hoteldetails, setHotelDetail] = useState();
+  const [hotel, setHotel] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [nav1, setNav1] = useState(null);
   const [nav2, setNav2] = useState(null);
@@ -111,6 +112,7 @@ const HotelCart = () => {
         //console.log(response.data);
         if(response.data?.hotel?.ShoppingCart){
           setHotelDetail(response.data.hotel);
+          setHotel(response.data?.hotel?.ShoppingCart?.Hotels);
           setBank(response.data.bankaccount);
         }else{
           toast.error("Ooops, Session has expired",{duration: 4000});
@@ -201,22 +203,26 @@ const componentProps = {
     const handleConfirmedSubmit = (data) => {
       // If the user confirms, proceed with form submission
         //console.log(data);
+        data.hotel = hotel;
         data.email =  userCookie;
+
+        console.log(data);
+        
       try {
         setIsLoading(true);
         axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, data).then((response)=>{
         //console.log(response.data);
-        if(response.data.status==1){
-          //toast.error(response.data.message,{duration: 8000});
-          //setIsLoading(false);
-          console.log(response.data);
-          router.push('/flight_book/' + response.data.id );
-        }else{
-          console.log(response.data);
-          toast.error(response.data.data,{duration: 8000});
-          setIsLoading(false);
-        }
-          }) .catch((error) => { if(error.code === 'ERR_NETWORK'){
+          if(response.data.status==1){
+            //toast.error(response.data.message,{duration: 8000});
+            //setIsLoading(false);
+            console.log(response.data);
+            router.push('/flight_book/' + response.data.id );
+          }else{
+            console.log(response.data);
+            toast.error(response.data.data,{duration: 8000});
+            setIsLoading(false);
+          }
+        }) .catch((error) => { if(error.code === 'ERR_NETWORK'){
         //alert('no internet connection');
           toast.error("Ooops, Network Error");
           setIsLoading(false);
@@ -256,6 +262,7 @@ const componentProps = {
     
   }, [hoteldetails, setValue]);
     
+  console.log(hoteldetails?.ShoppingCart?.Hotels);
 
     return (
         <>
@@ -614,19 +621,19 @@ const componentProps = {
                                   <div className="d-flex align-items-center p-3 my-3 bg-light rounded shadow-sm">
                                     <div className="align-items-center mb-3">
                                       
-                                      <div className="form-check">
+                                     {/* <div className="form-check">
                                         <input className="form-check-input" type="radio" value="paystack"  {...register("payment_method", { required: "Select payment method"  })} id="flexCheckDefault" onChange={ e => handleChange(e) } defaultChecked={false} />
                                         <label className="form-check-label" htmlFor="flexCheckDefault">
                                           Paystack
                                         </label>
-                                      </div>
+                                      </div>*/}
                                       
-                                      {/*<div className="form-check">
+                                      <div className="form-check">
                                         <input className="form-check-input" type="radio" value="bank transfer" {...register("payment_method", { required: "Select payment method"  })} id="flexCheckChecked" onChange={ e => handleChange(e) } defaultChecked={false} />
                                         <label className="form-check-label" htmlFor="flexCheckChecked">
                                           Bank Transfer
                                         </label>
-                                      </div>*/}
+                                      </div>
                                       
                                     </div>
                                     
@@ -648,7 +655,7 @@ const componentProps = {
                                       <input 
                                       className="form-check-input" 
                                       type="radio" 
-                                      value={d.bank_name} // Use dynamic value
+                                      value={d.id} // Use dynamic value
                                       {...register("bank", { required: "Select bank" })} 
                                       id={`flexbank${k}`} // Use unique ID for each bank
                                       onChange={e => handlebankChange(e)} 
@@ -681,7 +688,7 @@ const componentProps = {
                                             </svg>
                             </div>)}
                             
-                            {check =='bank transfer' && ( <div className="box-button-book">
+                            {check =='bank transfer' && (<div className="box-button-book">
                                   <button type="submit" className="btn btn-book">
                                     Continue <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M8 15L15 8L8 1M15 8L1 8" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
