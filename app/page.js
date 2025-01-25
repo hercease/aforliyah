@@ -36,6 +36,12 @@ import Router, { useRouter,usePathname } from 'next/navigation'
 import Layout from '../components/layout';
 import { AnimatePresence } from 'framer-motion';
 import { ClipLoader, BounceLoader } from 'react-spinners';
+import axios from 'axios';
+import formatDate from '/components/formatDate';
+import FormatNumberWithComma from '/components/formatNumberWithComma';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import Link from 'next/link'
+import he from 'he';
 
 // Import Swiper styles
 import "swiper/css";
@@ -128,6 +134,8 @@ export default function Home(){
 	const [val, setVal] = React.useState(1);
 	const [tabIndex, setTabIndex] = useState(0);
 	const [selected, setSelected] = useState('');
+	const [flightfearures, setFlightFeatures] = useState();
+	const [hotelfearures, setHotelFeatures] = useState();
 
 	  const handleChange = (event, newValue) => {
 		setValue(newValue);
@@ -332,6 +340,35 @@ export default function Home(){
     setValueForm3('children', children);
     setValueForm3('infant', infants);
   }, [adults, children, infants, setValueForm1, setValueForm2, setValueForm3]);
+  
+  useEffect(() => {
+    const fetchData = async (feature) => {
+      try {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, {
+          request_type: feature,
+        });
+        return response.data; // Return the fetched data
+      } catch (error) {
+        console.error("Error sending request:", error);
+      }
+    };
+
+    // Fetch the data and update the state
+    const fetchHotelFeature = async () => {
+      const data = await fetchData("fetch_hotel_feature");
+      setHotelFeatures(data); // Save data in state
+      console.log(data); // Log the resolved data
+    };
+
+	const fetchFlightFeature = async () => {
+		const data = await fetchData("fetch_flight_feature");
+		setFlightFeatures(data); // Save data in state
+		console.log(data); // Log the resolved data
+	  };
+
+    fetchHotelFeature();
+	fetchFlightFeature();
+  }, []); // Empty dependency array means this runs only once
 
 	return (
 		<>
@@ -1293,131 +1330,124 @@ export default function Home(){
 						<div className="box-list-featured">
 							<div className="content-right">
 								<div className="row">
-									<div className="col-lg-4 col-md-6">
-										<div className="card-journey-small background-card"> 
-											<div className="card-image"> 
-												<a className="label" href="#">Top Rated</a><a className="wish" href="#">
-													<svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-														<path d="M17.071 10.1422L11.4141 15.7991C10.6331 16.5801 9.36672 16.5801 8.58568 15.7991L2.92882 10.1422C0.9762 8.1896 0.9762 5.02378 2.92882 3.07116C4.88144 1.11853 8.04727 1.11853 9.99989 3.07116C11.9525 1.11853 15.1183 1.11853 17.071 3.07116C19.0236 5.02378 19.0236 8.1896 17.071 10.1422Z" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-													</svg>
-												</a>
-												<div style={{ position: 'relative', width: '100%', height: '350px' }}>
-													<Image layout="fill" objectFit="cover" src="/assets/imgs/page/homepage1/journey3.png" alt="Travila" />
-												</div>
-											</div>
-											<div className="card-info background-card"> 
-												<div className="card-rating"> 
-													<div className="card-left"></div>
-													<div className="card-right"> <span className="rating">4.96 <span className="text-sm-medium neutral-500">(672 reviews)</span></span>
-													</div>
-												</div>
-												<div className="card-title"> 
-													<a className="heading-6 neutral-1000" href="">
-														Lagos (LOs) - Doha (DOH) 
+							
+								{flightfearures && flightfearures.map((data, key) => {
+
+									return (
+
+										<div key={key} className="col-lg-4 col-md-6">
+											<div className="card-journey-small background-card"> 
+												<div className="card-image"> 
+													<a className="label" href="#">Top Rated</a><a className="wish" href="#">
+														<svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M17.071 10.1422L11.4141 15.7991C10.6331 16.5801 9.36672 16.5801 8.58568 15.7991L2.92882 10.1422C0.9762 8.1896 0.9762 5.02378 2.92882 3.07116C4.88144 1.11853 8.04727 1.11853 9.99989 3.07116C11.9525 1.11853 15.1183 1.11853 17.071 3.07116C19.0236 5.02378 19.0236 8.1896 17.071 10.1422Z" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+														</svg>
 													</a>
-												</div>
-												<div className="card-program"> 
-													<div className="card-duration-tour"> 
-														<p className="icon-duration text-sm-medium neutral-500">18 Aug 2024 - 23 Dec 2024 </p>
-														<p className="icon-guest text-md-medium neutral-500">Economy</p>
+													<div style={{ position: 'relative', width: '100%', height: '350px' }}>
+														<Image layout="fill" objectFit="cover" src="/assets/imgs/page/homepage1/journey3.png" alt="Travila" />
 													</div>
-													<div className="endtime"> 
-														<div className="card-price"> 
-															<h6 className="heading-6 neutral-1000">NGN 922,104</h6>
-															<p className="text-danger text-md-medium neutral-500">| Starting From</p>
+												</div>
+												<div className="card-info background-card"> 
+													<div className="card-rating"> 
+														
+													</div>
+													<div className="card-title"> 
+														<a className="fw-bold neutral-1000">
+															{data.flight_from} <ArrowForwardIcon />  {data.flight_to}
+														</a>
+													</div>
+													<div className="card-program"> 
+														<div className="card-duration-tour"> 
+															<p className="icon-duration text-sm-medium neutral-500">{formatDate(data.departure_date)}  {data.arrival_date && data.arrival_date !== "0000-00-00" && ` - ${formatDate(data.arrival_date)}`} </p>
+															<p className="icon-guest text-md-medium neutral-500 text-capitalize">{data.class}</p> 
 														</div>
-														<div className="card-button"> 
-															<a className="btn btn-gray" href="#">Book Now</a>
+														<div className="endtime"> 
+															<div className="card-price"> 
+																<h6 className="heading-6 neutral-1000">NGN {FormatNumberWithComma(data.price)}</h6>
+																<p className="text-danger text-md-medium neutral-500"></p>
+															</div>
+															<Link className="btn btn-gray" href={he.decode(data.link)}>
+																Book Now
+															</Link>
+
 														</div>
 													</div>
 												</div>
 											</div>
 										</div>
-									</div>
-									
-									<div className="col-lg-4 col-md-6">
-										<div className="card-journey-small background-card"> 
-											<div className="card-image"> 
-												<a className="label" href="#">Top Rated</a><a className="wish" href="#">
-													<svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-														<path d="M17.071 10.1422L11.4141 15.7991C10.6331 16.5801 9.36672 16.5801 8.58568 15.7991L2.92882 10.1422C0.9762 8.1896 0.9762 5.02378 2.92882 3.07116C4.88144 1.11853 8.04727 1.11853 9.99989 3.07116C11.9525 1.11853 15.1183 1.11853 17.071 3.07116C19.0236 5.02378 19.0236 8.1896 17.071 10.1422Z" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-													</svg>
-												</a>
-												<div style={{ position: 'relative', width: '100%', height: '350px' }}>
-													<Image layout="fill" objectFit="cover" src="/assets/imgs/page/homepage1/journey4.png" alt="Travila" />
-												</div>
-											</div>
-											<div className="card-info background-card"> 
-												<div className="card-rating"> 
-													<div className="card-left"></div>
-													<div className="card-right"> <span className="rating">4.96 <span className="text-sm-medium neutral-500">(672 reviews)</span></span>
-													</div>
-												</div>
-												<div className="card-title"> 
-													<a className="heading-6 neutral-1000" href="">
-														Lagos (LOS) - Lagos (LON) 
-													</a>
-												</div>
-												<div className="card-program"> 
-													<div className="card-duration-tour"> 
-														<p className="icon-duration text-sm-medium neutral-500">18 Aug 2024 - 20 Dec 2024 </p>
-														<p className="icon-guest text-md-medium neutral-500">Economy</p>
-													</div>
-													<div className="endtime"> 
-														<div className="card-price"> 
-															<h6 className="heading-6 neutral-1000">NGN 795,445</h6>
-															<p className="text-danger text-md-medium neutral-500">| Starting from</p>
-														</div>
-														<div className="card-button"> 
-															<a className="btn btn-gray" href="#">Book Now</a>
-														</div>
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
+
+									);
+								})}
 								
-									<div className="col-lg-4 col-md-6">
-										<div className="card-journey-small background-card"> 
-											<div className="card-image"> 
-												<a className="label" href="#">Top Rated</a><a className="wish" href="#">
-													<svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-														<path d="M17.071 10.1422L11.4141 15.7991C10.6331 16.5801 9.36672 16.5801 8.58568 15.7991L2.92882 10.1422C0.9762 8.1896 0.9762 5.02378 2.92882 3.07116C4.88144 1.11853 8.04727 1.11853 9.99989 3.07116C11.9525 1.11853 15.1183 1.11853 17.071 3.07116C19.0236 5.02378 19.0236 8.1896 17.071 10.1422Z" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-													</svg>
-												</a>
-												<div style={{ position: 'relative', width: '100%', height: '350px' }}>
-													<Image layout="fill" objectFit="cover" src="/assets/imgs/page/homepage1/journey2.png" alt="Travila" />
-												</div>
-											</div>
-											<div className="card-info background-card"> 
-												<div className="card-rating"> 
-													<div className="card-left"></div>
-													<div className="card-right"> <span className="rating">4.96 <span className="text-sm-medium neutral-500">(672 reviews)</span></span>
-													</div>
-												</div>
-												<div className="card-title"> 
-													<a className="heading-6 neutral-1000" href="">
-														Lagos (LOS) - Dubai (DXB) 
+								
+									
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section className="box-section block-content-tourlist background-body">
+				<div className="container"> 
+					<div className="col-lg-6 mb-30 text-center text-lg-start"> 
+						<h2 className="neutral-1000">Our Featured Hotels</h2>
+						<p className="text-xl-medium neutral-500">Favorite destinations </p>
+					</div>
+					<div className="pt-20 pb-30">
+						<div className="box-list-featured">
+							<div className="content-right">
+								<div className="row">
+							
+								{hotelfearures && hotelfearures.map((data, key) => {
+
+									return (
+
+										<div key={key} className="col-lg-4 col-md-6">
+											<div className="card-journey-small background-card"> 
+												<div className="card-image"> 
+													<a className="label" href="#">Top Rated</a><a className="wish" href="#">
+														<svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M17.071 10.1422L11.4141 15.7991C10.6331 16.5801 9.36672 16.5801 8.58568 15.7991L2.92882 10.1422C0.9762 8.1896 0.9762 5.02378 2.92882 3.07116C4.88144 1.11853 8.04727 1.11853 9.99989 3.07116C11.9525 1.11853 15.1183 1.11853 17.071 3.07116C19.0236 5.02378 19.0236 8.1896 17.071 10.1422Z" stroke="" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+														</svg>
 													</a>
-												</div>
-												<div className="card-program"> 
-													<div className="card-duration-tour"> 
-														<p className="icon-duration text-sm-medium neutral-500">18 Sep 2024 - 21 Dec 2024 </p>
-														<p className="icon-guest text-md-medium neutral-500">Economy</p>
+													<div style={{ position: 'relative', width: '100%', height: '350px' }}>
+														<Image layout="fill" objectFit="cover" src="/assets/imgs/page/homepage1/journey3.png" alt="Travila" />
 													</div>
-													<div className="endtime"> 
-														<div className="card-price"> 
-															<h6 className="heading-6 neutral-1000">NGN 822,167</h6>
-															<p className="text-danger text-md-medium neutral-500">| Starting from</p>
+												</div>
+												<div className="card-info background-card"> 
+													<div className="card-rating"> 
+														
+													</div>
+													<div className="card-title"> 
+														<a className="fw-bold neutral-1000">
+															{data.hotel_name}
+														</a>
+													</div>
+													<div className="card-program"> 
+														<div className="card-duration-tour"> 
+															<p className="icon-duration text-sm-medium neutral-500">{formatDate(data.checkin_date)} - {formatDate(data.checkout_date)} </p>
+															<p className="icon-guest text-md-medium neutral-500 text-capitalized">{data.total_adult} Adult{data.total_adult > 1 ? 's' : ''}, {data.total_children} Child {data.total_children > 1 ? 'ren' : ''},{data.total_rooms} Room{data.total_rooms > 1 ? 's' : ''}</p> 
 														</div>
-														<div className="card-button"> 
-															<a className="btn btn-gray" href="#">Book Now</a>
+														<div className="endtime"> 
+															<div className="card-price"> 
+																<h6 className="heading-6 neutral-1000">NGN {FormatNumberWithComma(data.price)}</h6>
+																<p className="text-danger text-md-medium neutral-500"></p>
+															</div>
+															<Link className="btn btn-gray" href={he.decode(data.link)}>
+																Book Now
+															</Link>
+
 														</div>
 													</div>
 												</div>
 											</div>
 										</div>
-									</div>
+
+									);
+								})}
+								
+								
 									
 								</div>
 							</div>
