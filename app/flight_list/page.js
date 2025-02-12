@@ -423,7 +423,7 @@ const Flight = () => {
 	  //fetchFlightDetail(id); // Call the first function
 	  //console.log(id);
 	  //console.log(allflightresults[id]);
-	  const foundFlight = allflightresults.find(flight => flight.originalIndex === id);
+	  const foundFlight = allflightresults.find(flight => flight.Id === id);
 	  setFlightdetail(foundFlight);
 	  handleDetailShow(); // Call the second function
 	};
@@ -2339,7 +2339,7 @@ const Flight = () => {
 													<div className="me-lg-2 ms-lg-auto"><FlightDetail flightId={data.Id} flightsession={flightsession} adult={adults} numchildren={child} infant={infants} />
 													</div>
 													<div className="">
-														<Button onClick={() => handleClick(data.originalIndex)} size="small" variant="contained">Details</Button>
+														<Button onClick={() => handleClick(data.Id)} size="small" variant="contained">Details</Button>
 													</div>
 											</div>
 										</div>
