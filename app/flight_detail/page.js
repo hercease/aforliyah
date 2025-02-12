@@ -668,18 +668,36 @@ const FlightDetail = () => {
 						<input type="date" {...register(`child_dob_${formfield.id}`, { 
 							required: "Enter date of birth",
 							validate: (value) => {
-							  const selectedDate = new Date(value);
-							  const currentDate = new Date();
 
-							  // Calculate the minimum and maximum valid dates
-							  const maxDate = new Date(currentDate.setFullYear(currentDate.getFullYear() - 11)); // Maximum 11 years old
-							  const minDate = new Date(currentDate.setFullYear(currentDate.getFullYear() - 3));  // Minimum 3 years old
+								const selectedDate = new Date(value);
+								const currentDate = new Date();
 
-							  if (selectedDate >= maxDate || selectedDate <= minDate) {
-								return "Age must be between 3 and 11 years.";
-							  }
+								console.log(selectedDate);
+							
+								// Check if the selectedDate is a valid date
+								if (isNaN(selectedDate.getTime())) {
+									return "Invalid date.";
+								}
+							
+								// Calculate the minimum and maximum valid dates
+								const maxDate = new Date(currentDate);
+								maxDate.setFullYear(currentDate.getFullYear() - 11); // Maximum 11 years old
+							
+								const minDate = new Date(currentDate);
+								minDate.setFullYear(currentDate.getFullYear() - 3); // Minimum 3 years old
+
+								   // For debugging: Log the dates in a human-readable format
+									console.log("Selected Date:", selectedDate.toString());
+									console.log("Max Date (11 years ago):", maxDate.toString());
+									console.log("Min Date (3 years ago):", minDate.toString());
+								
+							
+								if (selectedDate < maxDate || selectedDate > minDate) {
+									return "Age must be between 3 and 11 years.";
+								}
+							
+							  	return null;
 							  
-							  return true;
 							} 
 						  })}  			
 						className="form-control" />
