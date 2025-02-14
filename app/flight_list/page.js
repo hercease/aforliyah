@@ -89,7 +89,7 @@ const Flight = () => {
 	const [flightresults, setFlightresults] = React.useState();
 	const [cheapestresults, setCheapestresults] = React.useState();
 	const [fastestresults, setFastestresults] = React.useState();
-	const [recommendedresults, setRecommededresults] = React.useState();
+	const [recommendedResults, setRecommendedResults] = useState();
 	const [allflightresults, setAllflightresults] = React.useState();
 	const [flightairlines, setFlightairlines] = React.useState();
 	const [flightsession, setFlightsession] = React.useState();
@@ -357,11 +357,11 @@ const Flight = () => {
 			setFlightsession(response.data.sessionId);
 			setCheapestresults(response.data.cheapest_artinery);
 			setFastestresults(response.data.fastest_artinery);
-			setRecommededresults(response.data.recommended);
+			setRecommendedResults(response.data.recommended);
 			setOnestop(response.data.onestop);
 			setTwostop(response.data.twostop);
 			setNonstop(response.data.nonstop);
-			console.log(response.data);
+			//console.log(recommendedresults.Id);
 			
 		  } catch (error) {
 			//console.error('Error sending request:', error);
@@ -379,7 +379,7 @@ const Flight = () => {
 	var countLastSegments = flightresults?.[0]?.AirItinerary.OriginDestinationOptions?.[countSegments - 1]?.FlightSegments.length;
 	var ArrivalAirport = flightresults?.[0]?.AirItinerary.OriginDestinationOptions?.[countSegments - 1]?.FlightSegments[countLastSegments - 1]?.ArrivalAirportName;
 
-	console.log(cheapestresults);
+	//console.log(cheapestresults);
 	//console.log(flightresults);
 	useEffect(() => {
     if (params.get('request_type') === "multi-city") {
@@ -618,7 +618,7 @@ const Flight = () => {
 		
 		setValueForm3('cabin1', cabin_form3);
 	}, [adults, child, infants, setValueForm1, setValueForm2, formType, params, date, setValueForm3]);
-	console.log(flightresults);
+	//console.log(recommendedResults);
 	return (
 
 	<>
@@ -2190,9 +2190,9 @@ const Flight = () => {
 												</thead>
 												<tbody>
 													<tr>
-														<td onClick={() => handleClick(cheapestresults && cheapestresults.originalIndex)} className="fw-bold">{cheapestresults && cheapestresults.AirItineraryPricingInfo.CurrencyCode} {cheapestresults && FormatNumberWithComma(cheapestresults.AirItineraryPricingInfo.TotalPrice)}</td>
-														<td onClick={() => handleClick(fastestresults && fastestresults.originalIndex)} className="fw-bold">{fastestresults && fastestresults.AirItineraryPricingInfo.CurrencyCode} {fastestresults && FormatNumberWithComma(fastestresults.AirItineraryPricingInfo.TotalPrice)}</td>
-														<td onClick={() => handleClick(recommendedresults && recommendedresults.originalIndex)} className="fw-bold">{recommendedresults && recommendedresults.AirItineraryPricingInfo.CurrencyCode} {recommendedresults && FormatNumberWithComma(recommendedresults.AirItineraryPricingInfo.TotalPrice)}</td>
+														<td onClick={() => handleClick(cheapestresults && cheapestresults.Id)} className="fw-bold">{cheapestresults && cheapestresults.AirItineraryPricingInfo.CurrencyCode} {cheapestresults && FormatNumberWithComma(cheapestresults.AirItineraryPricingInfo.TotalPrice)}</td>
+														<td onClick={() => handleClick(fastestresults && fastestresults.Id)} className="fw-bold">{fastestresults && fastestresults.AirItineraryPricingInfo.CurrencyCode} {fastestresults && FormatNumberWithComma(fastestresults.AirItineraryPricingInfo.TotalPrice)}</td>
+														<td onClick={() => handleClick(recommendedResults && recommendedResults.Id)} className="fw-bold">{recommendedResults && recommendedResults.AirItineraryPricingInfo.CurrencyCode} {recommendedResults && FormatNumberWithComma(recommendedResults.AirItineraryPricingInfo.TotalPrice)}</td>
 														
 													</tr>
 												</tbody>
