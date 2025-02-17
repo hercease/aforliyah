@@ -45,6 +45,8 @@ import Badge from '@mui/material/Badge';
 import { ClipLoader, BounceLoader, BarLoader, ClockLoader  } from 'react-spinners';
 import Pagination from '@mui/material/Pagination';
 import FlightMatrixCarousel from '../../components/FlightMatrixCarousel';
+import FareCalendarCollapse from '../../components/fareCalendar.js';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -88,8 +90,9 @@ const Flight = () => {
 	const [value, setValue] = React.useState(0);
 	const [flightresults, setFlightresults] = React.useState();
 	const [cheapestresults, setCheapestresults] = React.useState();
-	const [fastestresults, setFastestresults] = React.useState();
+	const [fastestResults, setFastestResults] = React.useState();
 	const [recommendedResults, setRecommendedResults] = useState();
+	const [fareResults, setFareResults] = useState({});
 	const [allflightresults, setAllflightresults] = React.useState();
 	const [flightairlines, setFlightairlines] = React.useState();
 	const [flightsession, setFlightsession] = React.useState();
@@ -222,10 +225,29 @@ const Flight = () => {
 	newPayload.outbound_arrival = arrival;
 	newPayload.stops = selectedStop;
 
-    return newPayload;
-  }, [
+ 	return newPayload;
+   }, [
     params, page, arrival, checkedItems, selectedRanges, selectedStop
   ]);
+
+  const farepayload = useMemo(() => {
+    const request_type = "fare_calendar";
+    const newPayload = {};
+
+	newPayload.cabin = params.get('cabin');
+	newPayload.request_type = request_type;
+	newPayload.adult = params.get('adult');
+	newPayload.child = params.get('children');
+	newPayload.infant = params.get('infant');
+	newPayload.departure = params.get('departure');
+	newPayload.arrival =  params.get('arrival');
+	newPayload.departure_date = params.get('departure_date');
+	newPayload.arrival_date = params.get('arrival_date');
+
+ 	return newPayload;
+
+  }, [params]);
+
 	const handleClose = () => setSearchshow(false);
 	const handleShow = () => setSearchshow(true);
 	
@@ -344,7 +366,9 @@ const Flight = () => {
 	};
 
 	useEffect(() => {
+
 		 setIsLoading(true);
+		 
 		const fetchData = async () => {
 		  try {
 			const response = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, payload);
@@ -356,7 +380,7 @@ const Flight = () => {
 			setFlightairlines(response.data.airlines);
 			setFlightsession(response.data.sessionId);
 			setCheapestresults(response.data.cheapest_artinery);
-			setFastestresults(response.data.fastest_artinery);
+			setFastestResults(response.data.fastest_artinery);
 			setRecommendedResults(response.data.recommended);
 			setOnestop(response.data.onestop);
 			setTwostop(response.data.twostop);
@@ -371,7 +395,21 @@ const Flight = () => {
 		  }
 		};
 
+		//console.log(payload.request_type = 'fare_calendar');
+		//console.log(payload);
+
+		const fetchCalendarfare = async () => { 
+			try {
+				const resp = await axios.post(`${process.env.NEXT_PUBLIC_HOST}/`, farepayload);
+				  console.log(resp.data);
+				setFareResults(resp.data);
+			} catch (error) {
+				console.error('Error sending request:', error);
+			}
+		};
+
 		fetchData();
+		fetchCalendarfare();
 	}, [payload,page]);
 	
 	var DepartureAirport = flightresults?.[0]?.AirItinerary.OriginDestinationOptions?.[0]?.FlightSegments[0]?.DepartureAirportName;
@@ -424,6 +462,7 @@ const Flight = () => {
 	  //console.log(id);
 	  //console.log(allflightresults[id]);
 	  const foundFlight = allflightresults.find(flight => flight.Id === id);
+	 //console.log(foundFlight);
 	  setFlightdetail(foundFlight);
 	  handleDetailShow(); // Call the second function
 	};
@@ -618,7 +657,9 @@ const Flight = () => {
 		
 		setValueForm3('cabin1', cabin_form3);
 	}, [adults, child, infants, setValueForm1, setValueForm2, formType, params, date, setValueForm3]);
-	//console.log(recommendedResults);
+
+	//console.log(allflightresults);
+
 	return (
 
 	<>
@@ -2176,7 +2217,7 @@ const Flight = () => {
 							  <div>
 								
 								<FlightMatrixCarousel flightmatrix={flightmatrix} onestop={onestop} nonstop={nonstop} twostop={twostop} />
-
+								{ payload && payload.request_type === 'round-trip' && <div className="mb-3 mt-3"><CalendarTodayIcon style={{ fontSize: 40, color: '#1976d2' }} /> <FareCalendarCollapse fareCalendar={fareResults} /></div> }
 								<div className="row">
 									<div className="col-12">
 										<div className="table-responsive">
@@ -2190,9 +2231,9 @@ const Flight = () => {
 												</thead>
 												<tbody>
 													<tr>
-														<td onClick={() => handleClick(cheapestresults && cheapestresults.Id)} className="fw-bold">{cheapestresults && cheapestresults.AirItineraryPricingInfo.CurrencyCode} {cheapestresults && FormatNumberWithComma(cheapestresults.AirItineraryPricingInfo.TotalPrice)}</td>
-														<td onClick={() => handleClick(fastestresults && fastestresults.Id)} className="fw-bold">{fastestresults && fastestresults.AirItineraryPricingInfo.CurrencyCode} {fastestresults && FormatNumberWithComma(fastestresults.AirItineraryPricingInfo.TotalPrice)}</td>
-														<td onClick={() => handleClick(recommendedResults && recommendedResults.Id)} className="fw-bold">{recommendedResults && recommendedResults.AirItineraryPricingInfo.CurrencyCode} {recommendedResults && FormatNumberWithComma(recommendedResults.AirItineraryPricingInfo.TotalPrice)}</td>
+														<td onClick={() => handleClick(cheapestresults && cheapestresults?.Id)} className="fw-bold">{cheapestresults && cheapestresults.AirItineraryPricingInfo.CurrencyCode} {cheapestresults && FormatNumberWithComma(cheapestresults.AirItineraryPricingInfo.TotalPrice)}</td>
+														<td onClick={() => handleClick(recommendedResults && recommendedResults?.Id)} className="fw-bold">{recommendedResults && recommendedResults.AirItineraryPricingInfo.CurrencyCode} {recommendedResults && FormatNumberWithComma(recommendedResults.AirItineraryPricingInfo.TotalPrice)}</td>
+														<td onClick={() => handleClick(fastestResults && fastestResults?.Id)} className="fw-bold">{fastestResults && fastestResults.AirItineraryPricingInfo.CurrencyCode} {fastestResults && FormatNumberWithComma(fastestResults.AirItineraryPricingInfo.TotalPrice)}</td>
 														
 													</tr>
 												</tbody>

@@ -19,6 +19,7 @@ import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import toast, { Toaster } from 'react-hot-toast';
+import { getData } from 'country-list';
 //import { PaystackButton } from 'react-paystack';
 //import { usePaystackPayment } from 'react-paystack';
 //import Paystack from '@paystack/inline-js';
@@ -311,6 +312,7 @@ const FlightDetail = () => {
 	}
 	
 	console.log(bankcheck);
+	const countries = getData();
 
 
 	return (
@@ -629,6 +631,93 @@ const FlightDetail = () => {
 						  </div>
 						)}
 					</div>
+
+					<div className="mb-3">
+						<label>Passport Issuing Date</label>
+						<input
+							type="date"
+							{...register(`adult_passport_issuing_date_${formfield.id}`, {
+								required: "Enter passport no"
+							})}
+							className="form-control"
+							placeholder="Passport Number"
+						/>
+						{errors[`adult_passport_issuing_date_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`adult_passport_issuing_date_${formfield.id}`]?.message}
+						  </div>
+						)}
+						
+					</div>
+
+					<div className="mb-3">
+						<label>Passport Expiry Date</label>
+						<input
+							type="date"
+							{...register(`adult_passport_expiry_date_${formfield.id}`, {
+								required: "Enter passport expiry date"
+							})}
+							className="form-control"
+							placeholder="Passport expiry date"
+						/>
+						{errors[`adult_passport_expiry_date_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`adult_passport_expiry_date_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
+					<div className="mb-3">
+						<label htmlFor="countrySelect" className="form-label">
+							Passport Issuing Country
+						</label>
+						<select
+							id="countrySelect"
+							className="form-select"
+							{...register(`adult_passport_issuing_country_${formfield.id}`,{
+								required: "Select nationality"
+							})}
+						>
+							<option value="">-- Select a country --</option>
+							{countries.map((country) => (
+							<option key={country.code} value={country.code}>
+								{country.name}
+							</option>
+							))}
+						</select>
+						{errors[`adult_passport_issuing_country_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`adult_passport_issuing_country_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
+					<div className="mb-3">
+						<label htmlFor="countrySelect" className="form-label">
+							Nationality
+						</label>
+						<select
+							id="countrySelect"
+							className="form-select"
+							{...register(`adult_nationality_${formfield.id}`)}
+						>
+							<option value="">-- Select a country --</option>
+							{countries.map((country) => (
+							<option key={country.code} value={country.code}>
+								{country.name}
+							</option>
+							))}
+						</select>
+						{errors[`adult_nationality_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`adult_nationality_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
 					<input type="hidden" {...register(`adult_typecode_${formfield.id}`)} defaultValue="ADT" />
 					<input type="hidden" {...register(`adult_baggageqty_${formfield.id}`)} defaultValue={checkBaggage("ADT", baggage)} />
 
@@ -739,6 +828,97 @@ const FlightDetail = () => {
 						  </div>
 						)}
 					</div>
+
+					<div className="mb-3">
+						<label>Passport Issuing Date</label>
+						<input
+							type="date"
+							{...register(`child_passport_issuing_date_${formfield.id}`, {
+								required: "Enter passport issuing date"
+							})}
+							className="form-control"
+							placeholder="Passport Number"
+						/>
+						{errors[`child_passport_issuing_date_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`child_passport_issuing_date_${formfield.id}`]?.message}
+						  </div>
+						)}
+						
+					</div>
+
+					<div className="mb-3">
+						<label>Passport Expiry Date</label>
+						<input
+							type="date"
+							{...register(`child_passport_expiry_date_${formfield.id}`, {
+								required: "Enter passport expiry date"
+							})}
+							className="form-control"
+							placeholder="Passport Expiry Date"
+						/>
+
+						{errors[`child_passport_expiry_date_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`child_passport_expiry_date_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
+					<div className="mb-3">
+						<label htmlFor="countrySelect" className="form-label">
+							Passport Issuing Country
+						</label>
+						<select
+							id="countrySelect"
+							className="form-select"
+							{...register(`child_passport_issuing_country_${formfield.id}`,{
+								required: "Select nationality"
+							})}
+						>
+							<option value="">-- Select a country --</option>
+							{countries.map((country) => (
+							<option key={country.code} value={country.code}>
+								{country.name}
+							</option>
+							))}
+						</select>
+						{errors[`child_passport_issuing_country_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`child_passport_issuing_country_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
+					<div className="mb-3">
+						<label htmlFor="countrySelect" className="form-label">
+							Nationality
+						</label>
+						<select
+							id="countrySelect"
+							className="form-select"
+							{...register(`child_nationality_${formfield.id}`,{
+								required: "Select nationality"
+							})}
+						>
+							<option value="">-- Select a country --</option>
+							{countries.map((country) => (
+							<option key={country.code} value={country.code}>
+								{country.name}
+							</option>
+							))}
+						</select>
+						{errors[`child_nationality_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`child_nationality_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
 					<input type="hidden" {...register(`child_typecode_${formfield.id}`)} defaultValue="CNN" />
 					<input type="hidden" {...register(`child_baggageqty_${formfield.id}`)} defaultValue={checkBaggage("CNN", baggage)} />
 				</div>
@@ -822,6 +1002,94 @@ const FlightDetail = () => {
 						  </div>
 						)}
 					</div>
+
+					<div className="mb-3">
+						<label>Passport Issuing Date</label>
+						<input
+							type="date"
+							{...register(`infant_passport_issuing_date_${formfield.id}`, {
+								required: "Enter passport no"
+							})}
+							className="form-control"
+							placeholder="Passport Issuing date"
+						/>
+						{errors[`infant_passport_issuing_date_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`infant_passport_issuing_date_${formfield.id}`]?.message}
+						  </div>
+						)}
+						
+					</div>
+
+					<div className="mb-3">
+						<label>Passport Expiry Date</label>
+						<input
+							type="date"
+							{...register(`infant_passport_expiry_date_${formfield.id}`, {
+								required: "Enter passport expiry date"
+							})}
+							className="form-control"
+							placeholder="Passport expiry date"
+						/>
+						{errors[`infant_passport_expiry_date_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`infant_passport_expiry_date_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
+					<div className="mb-3">
+						<label htmlFor="countrySelect" className="form-label">
+							Passport Issuing Country
+						</label>
+						<select
+							id="countrySelect"
+							className="form-select"
+							{...register(`infant_passport_issuing_country_${formfield.id}`,{
+								required: "Select nationality"
+							})}
+						>
+							<option value="">-- Select a country --</option>
+							{countries.map((country) => (
+							<option key={country.code} value={country.code}>
+								{country.name}
+							</option>
+							))}
+						</select>
+						{errors[`infant_passport_issuing_country_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`infant_passport_issuing_country_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
+					<div className="mb-3">
+						<label htmlFor="countrySelect" className="form-label">
+							Nationality
+						</label>
+						<select
+							id="countrySelect"
+							className="form-select"
+							{...register(`infant_nationality_${formfield.id}`)}
+						>
+							<option value="">-- Select a country --</option>
+							{countries.map((country) => (
+							<option key={country.code} value={country.code}>
+								{country.name}
+							</option>
+							))}
+						</select>
+						{errors[`infant_nationality_${formfield.id}`] && (
+						  <div className='text-danger mt-1'>
+							<ErrorOutlineRoundedIcon fontSize="small" />
+							{errors[`infant_nationality_${formfield.id}`]?.message}
+						  </div>
+						)}
+					</div>
+
 					<input type="hidden" {...register(`infant_typecode_${formfield.id}`)} defaultValue="INF" />
 					<input type="hidden" {...register(`infant_baggageqty_${formfield.id}`)} defaultValue={checkBaggage("INF", baggage)} />
 				</div>

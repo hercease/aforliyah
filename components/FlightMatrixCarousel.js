@@ -17,10 +17,6 @@ const FlightMatrixCarousel = ({ flightmatrix, onestop, twostop, nonstop }) => {
     return ".....";
   }
 
-
-  
-
-
   return (
     <>
     <style>{`

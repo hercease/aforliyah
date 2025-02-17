@@ -46,7 +46,10 @@ const CustomTypeahead = ({
 				}
 		  }
 
-		  });
+		  }).catch((error) => {
+        console.error("Fetch error:", error);
+        setOptions([]); // Set options to empty array if fetch fails
+      });
 	  }, [fetchUrl, initialQueryUsed, initialQuery, onCodeSelect]);
 
 	useEffect(() => {

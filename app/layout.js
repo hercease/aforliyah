@@ -16,7 +16,6 @@ import { Toaster } from "react-hot-toast";
 import $ from 'jquery';
 
 
-
 const manrope_init = Manrope({
     weight: ['300', '400', '500', '600', '700','800'],
     subsets: ['latin'],
