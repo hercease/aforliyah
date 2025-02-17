@@ -1,8 +1,9 @@
 // components/FareCalendarCollapse.js
 import React from 'react';
+import Router, { useRouter,usePathname } from 'next/navigation'
 
 const FareCalendarCollapse = ({ fareCalendar }) => {
-
+    const router = useRouter();
     const departureDates = Object.keys(fareCalendar).sort();
 
 	// Collect all unique arrival dates (X axis)
@@ -13,6 +14,12 @@ const FareCalendarCollapse = ({ fareCalendar }) => {
 	  });
 	});
 	const arrivalDates = Array.from(arrivalDatesSet).sort();
+
+    const handleFareClick = (cell) => {
+            console.log(`Clicked fare: ${cell.fare}, ${cell.cabin}, ${cell.adult}, ${cell.infant}, ${cell.children} from ${cell.departure_key} to ${cell.arrival_key}`);
+        // TODO: Add additional logic here, like opening a modal with more details.
+        router.push(`/flight_list?departure=${cell.departure}&arrival=${cell.arrival}&request_type=${cell.request_type}&cabin=${cell.cabin}&adult=${cell.adult}&infant=${cell.infant}&child=${cell.children}&departure_date=${cell.departure_key}&arrival_date=${cell.arrival_key}`);
+    };
 
   return (
     <>
@@ -49,7 +56,14 @@ const FareCalendarCollapse = ({ fareCalendar }) => {
                                 const cell = fareCalendar[departure][arrival];
                                 return (
                                     <td key={`${departure}-${arrival}`} style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>
-                                        {cell && cell.fare ? cell.fare : 'N/A'}
+                                        { cell && cell.fare ? (
+                                            <a onClick={() => handleFareClick(cell)} className="">
+                                                {cell.fare}
+                                            </a>
+                                            ) : (
+                                            'N/A'
+                                        )
+                                        }
                                     </td>
                                 );
                                 })}
