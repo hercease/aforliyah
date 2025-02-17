@@ -637,10 +637,10 @@ const FlightDetail = () => {
 						<input
 							type="date"
 							{...register(`adult_passport_issuing_date_${formfield.id}`, {
-								required: "Enter passport no"
+								required: "Enter passport issuing date"
 							})}
 							className="form-control"
-							placeholder="Passport Number"
+							placeholder="Passport Issuing date"
 						/>
 						{errors[`adult_passport_issuing_date_${formfield.id}`] && (
 						  <div className='text-danger mt-1'>
@@ -677,7 +677,7 @@ const FlightDetail = () => {
 							id="countrySelect"
 							className="form-select"
 							{...register(`adult_passport_issuing_country_${formfield.id}`,{
-								required: "Select nationality"
+								required: "Select Issuing country"
 							})}
 						>
 							<option value="">-- Select a country --</option>
@@ -702,7 +702,9 @@ const FlightDetail = () => {
 						<select
 							id="countrySelect"
 							className="form-select"
-							{...register(`adult_nationality_${formfield.id}`)}
+							{...register(`adult_nationality_${formfield.id}`,{
+								required: "Select nationality"
+							})}
 						>
 							<option value="">-- Select a country --</option>
 							{countries.map((country) => (
@@ -875,7 +877,7 @@ const FlightDetail = () => {
 							id="countrySelect"
 							className="form-select"
 							{...register(`child_passport_issuing_country_${formfield.id}`,{
-								required: "Select nationality"
+								required: "Select issuing country"
 							})}
 						>
 							<option value="">-- Select a country --</option>
@@ -1008,7 +1010,7 @@ const FlightDetail = () => {
 						<input
 							type="date"
 							{...register(`infant_passport_issuing_date_${formfield.id}`, {
-								required: "Enter passport no"
+								required: "Enter passport issuing date"
 							})}
 							className="form-control"
 							placeholder="Passport Issuing date"
@@ -1048,7 +1050,7 @@ const FlightDetail = () => {
 							id="countrySelect"
 							className="form-select"
 							{...register(`infant_passport_issuing_country_${formfield.id}`,{
-								required: "Select nationality"
+								required: "Select passport issuing country"
 							})}
 						>
 							<option value="">-- Select a country --</option>
@@ -1073,7 +1075,9 @@ const FlightDetail = () => {
 						<select
 							id="countrySelect"
 							className="form-select"
-							{...register(`infant_nationality_${formfield.id}`)}
+							{...register(`infant_nationality_${formfield.id}`,{
+								required: "Select nationality"
+							})}
 						>
 							<option value="">-- Select a country --</option>
 							{countries.map((country) => (
