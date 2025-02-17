@@ -16,7 +16,7 @@ const FareCalendarCollapse = ({ fareCalendar }) => {
 	const arrivalDates = Array.from(arrivalDatesSet).sort();
 
     const handleFareClick = (cell) => {
-            console.log(`Clicked fare: ${cell.fare}, ${cell.cabin}, ${cell.adult}, ${cell.infant}, ${cell.children} from ${cell.departure_key} to ${cell.arrival_key}`);
+          //console.log(`Clicked fare: ${cell.fare}, ${cell.cabin}, ${cell.adult}, ${cell.infant}, ${cell.children} from ${cell.departure_key} to ${cell.arrival_key}`);
         // TODO: Add additional logic here, like opening a modal with more details.
         router.push(`/flight_list?departure=${cell.departure}&arrival=${cell.arrival}&request_type=${cell.request_type}&cabin=${cell.cabin}&adult=${cell.adult}&infant=${cell.infant}&child=${cell.children}&departure_date=${cell.departure_key}&arrival_date=${cell.arrival_key}`);
     };
