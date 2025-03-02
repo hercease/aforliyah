@@ -460,7 +460,7 @@ export default function Home(){
 																	placeholder="Flying from"
 																	name="departure"
 																	icon="bx bxs-plane-take-off bx-sm"
-																	fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																	fetchUrl="/"
 																	onCodeSelect={(code) => field.onChange(code)}
 																	error={errorsForm1.departure}
 																	initialQuery=""
@@ -481,7 +481,7 @@ export default function Home(){
 																		placeholder="Flying to"
 																		name="arrival"
 																		icon="bx bxs-plane-land bx-sm"
-																		fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																		fetchUrl="/"
 																		   onCodeSelect={(code) => field.onChange(code)}
 																		error={errorsForm1.arrival}
 																		initialQuery=""
@@ -610,7 +610,7 @@ export default function Home(){
 																	placeholder="Flying from"
 																	name="departure"
 																	icon="bx bxs-plane-take-off bx-sm"
-																	fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																	fetchUrl="/"
 																	onCodeSelect={(code) => field.onChange(code)}
 																	error={errorsForm2.departure}
 																	initialQuery=""
@@ -632,7 +632,7 @@ export default function Home(){
 																		placeholder="Flying to"
 																		name="arrival"
 																		icon="bx bxs-plane-land bx-sm"
-																		fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																		fetchUrl="/"
 																		   onCodeSelect={(code) => field.onChange(code)}
 																		error={errorsForm2.arrival}
 																		initialQuery=""
@@ -781,7 +781,7 @@ export default function Home(){
 																					placeholder="Flying from"
 																					name={`departure${formfield.id}`}
 																					icon="bx bxs-plane-take-off bx-sm"
-																					fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																					fetchUrl="/"
 																					onCodeSelect={(code) => field.onChange(code)}
 																					error={errorsForm3[`departure${formfield.id}`]}
 																					initialQuery=""
@@ -803,7 +803,7 @@ export default function Home(){
 																		placeholder="Flying to"
 																		name={`arrival${formfield.id}`}
 																		icon="bx bxs-plane-land bx-sm"
-																		fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																		fetchUrl="/"
 																		onCodeSelect={(code) => field.onChange(code)}
 																		error={errorsForm3[`arrival${formfield.id}`]}
 																		initialQuery=""

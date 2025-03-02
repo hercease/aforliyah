@@ -23,34 +23,59 @@ const CustomTypeahead = ({
   const [initialQueryUsed, setInitialQueryUsed] = useState(false);
 
 
-	  const fetchData = useCallback((query) => {
-		fetch(`${fetchUrl}&q=${query}`)
-		  .then((response) => response.json())
-		  .then((data) => {
-			const formattedOptions = data.map((item) => ({
-			  code: item.code.trim(),
-			  city_fullname: item.city_fullname.trim(),
-			  name: item.name ? item.name.trim() : '',
-			}));
-			setOptions(formattedOptions);
-			
-			 // Automatically select the first option if initialQuery is used
-			if(initialQuery != ""){
-				if (!initialQueryUsed && formattedOptions.length > 0) {
-				  const firstOption = [formattedOptions[0]];
-				  setSelected(firstOption);
-				  if (onCodeSelect) {
-					onCodeSelect(firstOption[0].code);
-				  }
-				  setInitialQueryUsed(true); // Mark initial query as used
-				}
-		  }
+  const fetchData = useCallback((query) => {
+    fetch(`${process.env.NEXT_PUBLIC_HOST}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        search: query,
+        request_type: 'search_airports'
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        const formattedOptions = data.map((item) => ({
+          code: item.Code.trim(),
+          city_fullname: item.City.trim(),
+          name: item.Name ? item.Name.trim() : '',
+        }));
+  
+        setOptions(formattedOptions);
+  
+        /*if (initialQuery && !initialQueryUsed) {
+          //const firstOption = formattedOptions.find((item) => item.code === initialQuery);
+          const firstOption = [formattedOptions[0]];
+          if (firstOption) {
+            setSelected([firstOption]); // ✅ Fix: Ensure selected is always an array
+            if (onCodeSelect) {
+              console.log(firstOption);
+              onCodeSelect(firstOption[0].code);
+            }
+            setInitialQueryUsed(true);
+          }
+        }*/
 
-		  }).catch((error) => {
+        if(initialQuery != ""){
+          if (!initialQueryUsed && formattedOptions.length > 0) {
+            console.log(formattedOptions);
+            //const firstOption = formattedOptions.find((item) => item.code === initialQuery);
+            const firstOption = [formattedOptions[0]];
+            setSelected(firstOption);
+            if (onCodeSelect) {
+              onCodeSelect(firstOption[0]?.code);
+            }
+            setInitialQueryUsed(true); // Mark initial query as used
+          }
+        }
+      })
+      .catch((error) => {
         console.error("Fetch error:", error);
-        setOptions([]); // Set options to empty array if fetch fails
+        setOptions([]);
       });
-	  }, [fetchUrl, initialQueryUsed, initialQuery, onCodeSelect]);
+  }, [initialQueryUsed, initialQuery, onCodeSelect]);
 
 	useEffect(() => {
 		if (initialQuery && !initialQueryUsed){
@@ -58,6 +83,7 @@ const CustomTypeahead = ({
 		}
 	}, [initialQuery, fetchData, initialQueryUsed]);
   
+  console.log(selected);
   return (
     <>
 	 <style>{`
@@ -116,9 +142,7 @@ const CustomTypeahead = ({
         )}
         <TypeaheadWithRef
           id={id}
-           labelKey={(option) =>
-	`${option.code.trim()} - ${option.city_fullname.trim()}${option.name ? ` (${option.name.trim()})` : ''}`
-		  }
+          labelKey={(option) => `${option.code.trim()} - ${option.city_fullname.trim()}${option.name ? ` (${option.name.trim()})` : ''}`}
           options={options}
           onInputChange={(text) => {
             setInitialQueryUsed(true); // Mark as used once the user types
