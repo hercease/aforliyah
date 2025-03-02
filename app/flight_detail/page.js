@@ -195,6 +195,15 @@ const FlightDetail = () => {
 			}
 		});
     };
+
+	useEffect(() => {
+		if (typeof window !== "undefined" && window.gtag) {
+		  window.gtag("event", "conversion", {
+			send_to : 'AW-16851311372/PVn1CI3AlJsaEIy2quM-',
+			transaction_id: "", // Add actual transaction ID if available
+		  });
+		}
+	  }, []);
 	
 	  // you can call this function anything
 	/*const onSuccess = (reference) => {
@@ -1232,7 +1241,7 @@ const FlightDetail = () => {
 			
 	</Layout>
 	</AnimatePresence>
-		</>
+	</>
 	)
 }
 

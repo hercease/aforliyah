@@ -68,6 +68,7 @@ const HotelDetails = () => {
 		newPayload.request_type = "hotel_detail";
 
     return newPayload;
+
 	}, [
         params
 	]);
@@ -136,6 +137,15 @@ const addHotelToCart = async ({
     setIsLoading(false); // Uncomment if you manage loading state
   }
 };
+
+    useEffect(() => {
+      if (typeof window !== "undefined" && window.gtag) {
+        window.gtag("event", "conversion", {
+        send_to : 'AW-16851311372/PVn1CI3AlJsaEIy2quM-',
+        transaction_id: "", // Add actual transaction ID if available
+        });
+      }
+    }, []);
 
       return (
         <>
