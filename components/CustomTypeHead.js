@@ -4,6 +4,7 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import TypeaheadWithRef from './TypeaheadWithRef';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import airports from "./airports"; // Import the data
 
 const CustomTypeahead = ({
   id,
@@ -23,7 +24,7 @@ const CustomTypeahead = ({
   const [initialQueryUsed, setInitialQueryUsed] = useState(false);
 
 
-  const fetchData = useCallback((query) => {
+  /*const fetchData = useCallback((query) => {
     fetch(`${process.env.NEXT_PUBLIC_HOST}/`, {
       method: 'POST',
       headers: {
@@ -38,25 +39,14 @@ const CustomTypeahead = ({
       .then((data) => {
         console.log(data);
         const formattedOptions = data.map((item) => ({
-          code: item.Code.trim(),
-          city_fullname: item.City.trim(),
-          name: item.Name ? item.Name.trim() : '',
+          code: item.iata.trim(),
+          city: item.city.trim(),
+          name: item.name.trim(),
+          country: item.country.trim(),
         }));
   
         setOptions(formattedOptions);
   
-        /*if (initialQuery && !initialQueryUsed) {
-          //const firstOption = formattedOptions.find((item) => item.code === initialQuery);
-          const firstOption = [formattedOptions[0]];
-          if (firstOption) {
-            setSelected([firstOption]); // ✅ Fix: Ensure selected is always an array
-            if (onCodeSelect) {
-              console.log(firstOption);
-              onCodeSelect(firstOption[0].code);
-            }
-            setInitialQueryUsed(true);
-          }
-        }*/
 
         if(initialQuery != ""){
           if (!initialQueryUsed && formattedOptions.length > 0) {
@@ -75,7 +65,39 @@ const CustomTypeahead = ({
         console.error("Fetch error:", error);
         setOptions([]);
       });
+  }, [initialQueryUsed, initialQuery, onCodeSelect]);*/
+
+  const fetchData = useCallback((query) => {
+    // Filter airports based on user query
+    const filteredAirports = airports.filter((item) =>
+      item.name.toLowerCase().includes(query.toLowerCase()) ||
+      item.city.toLowerCase().includes(query.toLowerCase()) ||
+      item.iata.toLowerCase().includes(query.toLowerCase())
+    );
+
+    // Format options
+    const formattedOptions = filteredAirports.map((item) => ({
+      code: item.iata.trim(),
+      city: item.city.trim(),
+      name: item.name.trim(),
+      country: item.country.trim(),
+    }));
+
+    setOptions(formattedOptions);
+
+    if (initialQuery !== "") {
+      if (!initialQueryUsed && formattedOptions.length > 0) {
+        console.log(formattedOptions);
+        const firstOption = [formattedOptions[0]];
+        setSelected(firstOption);
+        if (onCodeSelect) {
+          onCodeSelect(firstOption[0]?.code);
+        }
+        setInitialQueryUsed(true);
+      }
+    }
   }, [initialQueryUsed, initialQuery, onCodeSelect]);
+
 
 	useEffect(() => {
 		if (initialQuery && !initialQueryUsed){
@@ -142,7 +164,7 @@ const CustomTypeahead = ({
         )}
         <TypeaheadWithRef
           id={id}
-          labelKey={(option) => `${option.code.trim()} - ${option.city_fullname.trim()}${option.name ? ` (${option.name.trim()})` : ''}`}
+          labelKey={(option) => `${option.code.trim()} - ${option.city.trim()}${option.name ? ` (${option.name.trim()})` : ''} ${option.country.trim()}`}
           options={options}
           onInputChange={(text) => {
             setInitialQueryUsed(true); // Mark as used once the user types
@@ -165,12 +187,12 @@ const CustomTypeahead = ({
 		  className={`border custom-typeahead from-control custom-input ${error ? 'is-invalid' : ''}`}
           name={name}
 		  
-		  renderMenuItemChildren={(option, props) => (
-            <div className="custom-typeahead-item">
-              <strong>{option.code}</strong> - {option.city_fullname}{" "}
-              {option.name && <small>({option.name})</small>}
-            </div>
-          )}
+      renderMenuItemChildren={(option, props) => (
+        <div className="custom-typeahead-item">
+          <strong>{option.code}</strong> - {option.city}{" "}
+          {option.name && <small>({option.name})</small>} {option.country}
+        </div>
+      )}
         />
       </InputGroup>
 	  {error && <div className="text-danger mt-1"><ErrorOutlineRoundedIcon fontSize="small" /> {error.message}</div>}
