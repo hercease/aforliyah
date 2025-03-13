@@ -67,6 +67,7 @@ const CustomTypeahead = ({
       });
   }, [initialQueryUsed, initialQuery, onCodeSelect]);*/
 
+  
   const fetchData = useCallback((query) => {
     // Filter airports based on user query
     const filteredAirports = airports.filter((item) =>
