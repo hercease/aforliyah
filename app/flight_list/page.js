@@ -744,7 +744,7 @@ const Flight = () => {
 												placeholder="Flying from"
 												name="departure"
 												icon="bx bxs-plane-take-off bx-sm"
-												fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+												fetchUrl="/"
 												onCodeSelect={(code) => field.onChange(code)}
 												error={errorsForm1.departure}
 												initialQuery={params.get('departure') || ""}
@@ -766,7 +766,7 @@ const Flight = () => {
 												name="arrival"
 												initialQuery={params.get('arrival') || ""}
 												icon="bx bxs-plane-land bx-sm"
-												fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+												fetchUrl="/"
 												   onCodeSelect={(code) => field.onChange(code)}
 												error={errorsForm1.arrival}
 											  />
@@ -895,7 +895,7 @@ const Flight = () => {
 													name="departure"
 													initialQuery={params.get('departure') || ""}
 													icon="bx bxs-plane-take-off bx-sm"
-													fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+													fetchUrl="/"
 													onCodeSelect={(code) => field.onChange(code)}
 													error={errorsForm2.departure}
 												/> 
@@ -914,7 +914,7 @@ const Flight = () => {
 													name="arrival"
 													initialQuery={params.get('arrival') || ""}
 													icon="bx bxs-plane-land bx-sm"
-													fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+													fetchUrl="/"
 													   onCodeSelect={(code) => field.onChange(code)}
 													error={errorsForm2.arrival}
 												/>
@@ -1062,7 +1062,7 @@ const Flight = () => {
 																	name={`departure${formfield.id}`}
 																	initialQuery={params.get(`departure${formfield.id}`) || ""}
 																	icon="bx bxs-plane-take-off bx-sm"
-																	fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																	fetchUrl="/"
 																	onCodeSelect={(code) => field.onChange(code)}
 																	error={errorsForm3[`departure${formfield.id}`]}
 																/> 
@@ -1082,7 +1082,7 @@ const Flight = () => {
 																	name={`arrival${formfield.id}`}
 																	icon="bx bxs-plane-land bx-sm"
 																	initialQuery={params.get(`arrival${formfield.id}`) || ""}
-																	fetchUrl="https://autocomplete.travelpayouts.com/jravia?locale=en&with_airport=false"
+																	fetchUrl="/"
 																	onCodeSelect={(code) => field.onChange(code)}
 																	error={errorsForm3[`arrival${formfield.id}`]}
 																/>
