@@ -1220,7 +1220,7 @@ const Flight = () => {
 													<Button type="submit" className="rounded-4" variant="contained" fullWidth size="small">Find Your Flight</Button>
 												</div>
 											</div>
-							</form> }
+								</form> }
 							
 					
 						</div>
