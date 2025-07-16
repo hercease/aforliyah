@@ -2217,7 +2217,7 @@ const Flight = () => {
 							  <div>
 								
 								<FlightMatrixCarousel flightmatrix={flightmatrix} onestop={onestop} nonstop={nonstop} twostop={twostop} />
-								{/*{ payload && payload.request_type === 'round-trip' && <div className="mb-3 mt-3"><CalendarTodayIcon style={{ fontSize: 40, color: '#1976d2' }} /> <FareCalendarCollapse fareCalendar={fareResults} /></div> } */}
+								{ payload && payload.request_type === 'round-trip' && <div className="mb-3 mt-3"><CalendarTodayIcon style={{ fontSize: 40, color: '#1976d2' }} /> <FareCalendarCollapse fareCalendar={fareResults} /></div> }
 								<div className="row">
 									<div className="col-12">
 										<div className="table-responsive">
