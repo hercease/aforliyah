@@ -88,7 +88,7 @@ const CustomTypeahead = ({
 
     if (initialQuery !== "") {
       if (!initialQueryUsed && formattedOptions.length > 0) {
-        console.log(formattedOptions);
+        //console.log(formattedOptions);
         const matchedOption = formattedOptions.find(option => 
           option.code.toLowerCase() === initialQuery.trim().toLowerCase()
         );
@@ -111,7 +111,7 @@ const CustomTypeahead = ({
 		}
 	}, [initialQuery, fetchData, initialQueryUsed]);
   
-  console.log(selected);
+  //console.log(selected);
   return (
     <>
 	 <style>{`

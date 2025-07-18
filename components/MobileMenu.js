@@ -18,7 +18,7 @@ export default function MobileMenu({ isMobileMenu, handleMobileMenu, userdetails
 		destroyCookie(null, 'afotravelstoken'); router.push('/login');
 	}
 
-	console.log(userdetails);
+	//console.log(userdetails);
 
 	return (
 		<>

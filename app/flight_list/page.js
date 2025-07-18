@@ -385,7 +385,7 @@ const Flight = () => {
 			setOnestop(response.data.onestop);
 			setTwostop(response.data.twostop);
 			setNonstop(response.data.nonstop);
-			//console.log(recommendedresults.Id);
+			//console.log(response.data);
 			
 		  } catch (error) {
 			//console.error('Error sending request:', error);
@@ -409,7 +409,7 @@ const Flight = () => {
 		};
 
 		fetchData();
-		//fetchCalendarfare();
+		fetchCalendarfare();
 	}, [payload,page,farepayload]);
 	
 	var DepartureAirport = flightresults?.[0]?.AirItinerary.OriginDestinationOptions?.[0]?.FlightSegments[0]?.DepartureAirportName;
