@@ -409,7 +409,7 @@ const Flight = () => {
 		};
 
 		fetchData();
-		//fetchCalendarfare();
+		fetchCalendarfare();
 	}, [payload,page,farepayload]);
 	
 	var DepartureAirport = flightresults?.[0]?.AirItinerary.OriginDestinationOptions?.[0]?.FlightSegments[0]?.DepartureAirportName;
