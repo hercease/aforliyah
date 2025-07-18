@@ -385,7 +385,7 @@ const Flight = () => {
 			setOnestop(response.data.onestop);
 			setTwostop(response.data.twostop);
 			setNonstop(response.data.nonstop);
-			//console.log(recommendedresults.Id);
+			//console.log(response.data);
 			
 		  } catch (error) {
 			//console.error('Error sending request:', error);

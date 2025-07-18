@@ -58,7 +58,7 @@ const FareCalendarCollapse = ({ fareCalendar }) => {
                                 return (
                                     <td key={`${departure}-${arrival}`} style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>
                                         { cell && cell.fare ? (
-                                            <a onClick={() => handleFareClick(cell)} className="">
+                                            <a onClick={() => handleFareClick(cell)} style={{ cursor:'pointer' }} className="">
                                                 {cell.fare}
                                             </a>
                                             ) : (
