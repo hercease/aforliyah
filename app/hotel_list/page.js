@@ -48,13 +48,10 @@ const HotelList = () => {
     const [sessionid, setSessionId] = useState();
     const [pagination, setPagination] = useState();
     const [filter, setFilter] = useState(params.get('sortby') || '');
-
 	  const [page, setPage] = React.useState(1);
 	  const [totalguests, setTotalGuests] = React.useState(0);
-
 	  const [rooms, setRooms] = useState(parseInt(params.get('room') || 1));
     const [roomsState, setRoomsState] = useState([]);
-
     const [formData, setFormData] = useState({});
 
     const [selectedChain, setSelectedChain] = useState(() => {
